@@ -1,0 +1,14 @@
+# Site settings
+title: Stormlantern Blog
+email: dirk,louwers@stormlantern.nl
+description: >
+  Blogging home for Dirk Louwers
+baseurl: "" # the subpath of your site, e.g. /blog/
+url: "http://blog.stormlantern.nl" # the base hostname & protocol for your site
+twitter_username: dirk_louwers
+github_username:  dlouwers
+timezone: Europe/Amsterdam
+
+# Build settings
+markdown: kramdown
+highlighter: pygments

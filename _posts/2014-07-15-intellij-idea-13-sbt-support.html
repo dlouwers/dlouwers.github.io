@@ -1,0 +1,20 @@
+---
+layout: post
+title: IntelliJ IDEA 13 SBT support
+date: '2014-07-15T03:55:00.000-07:00'
+author: Dirk Louwers
+tags:
+- intellij
+- scala
+modified_time: '2014-07-16T02:17:32.962-07:00'
+blogger_id: tag:blogger.com,1999:blog-1529483519632285628.post-3118036763604934582
+blogger_orig_url: http://dogtyped.blogspot.com/2014/07/intellij-idea-13-sbt-support.html
+---
+
+<p>I was toying around with a multi project SBT file and the new IntelliJ 13 SBT support. It turns out that it has a lot
+    of trouble with multi project setups. When adding projects and renaming them IntelliJ gets really confused and you
+    end up with projects having the wrong name and some residual artifact projects in your project. I managed to get
+    things to work again by closing IntelliJ and running the following in my project root:</p>
+    {% highlight bash %}
+    find . -name ".idea" -type d -exec rm -r {} +
+    {% endhighlight %}
