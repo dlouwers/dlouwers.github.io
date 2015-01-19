@@ -3,7 +3,7 @@ layout: post
 title: Peace of mind in a state of overload
 date: '2015-01-04T08:03:00.000-08:00'
 author: Dirk Louwers
-tags: 
+tags:
 modified_time: '2015-01-04T08:03:33.263-08:00'
 thumbnail: http://2.bp.blogspot.com/-5pn9WY4q1xU/VJCHXMNlL-I/AAAAAAAADuw/14J5Xfpo8ug/s72-c/gtd_chart.png
 blogger_id: tag:blogger.com,1999:blog-1529483519632285628.post-4922970218668689298
@@ -16,7 +16,7 @@ using or want to use SCRUM, a popular and formalized Agile methodology, in their
 
 I got hooked on Agile back in 2005, while working for Db4o, and never looked back since. Improving the process per
 iteration and having a manageable amount of work per sprint gave me peace of mind and focus, enabling me to deliver the
-right software solutions to the stakeholders. When I got asked to join a tech startup in 2011 as it’s CTO I suddenly had
+right software solutions to the stakeholders. When I got asked to join a tech startup in 2011 as its CTO I suddenly had
 a lot more to deal with: hiring and managing staff, managing costs, reporting to the board, applying for subsidies and
 making sure the books were kept in order. On top of this I still operated as SCRUM Master and technical lead within a
 SCRUM team.
@@ -38,7 +38,7 @@ Truly staying on top of all these responsibilities is tough, real tough!
 
 ## Agile
 For those of you that are not familiar with Agile methodologies. Agile is an iterative process. In each iteration a team
-commits to a finite amount of work. A typical iteration has a length of two weeks, which is it’s deadline. All stories,
+commits to a finite amount of work. A typical iteration has a length of two weeks, which is its deadline. All stories,
 the units of work in an iteration, can be made actionable by the Agile team.
 
 ## GTD
@@ -62,7 +62,7 @@ quick overview.
 The purpose of the GTD inbox is to collect anything new that might or might not require your attention. Whenever
 something pops up into your mind that you think requires your attention, either now or in the future, you collect it
 here. It doesn’t need to be organised. It doesn’t even need to be an attainable goal. As long as you get it off your
-mind and file it away for review, the inbox has done it’s job. Reviewing the inbox will empty it into one of the
+mind and file it away for review, the inbox has done its job. Reviewing the inbox will empty it into one of the
 following categories.
 
 ## Trash
