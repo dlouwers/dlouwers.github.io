@@ -1,2 +1,0 @@
-# Try is free in the Future
-Lately I have seen a few developers consistently use a Try inside of a Future in order to make error handling easier. Here I will investigate if this has any merits or whether a Future on it's own offers enough error handling.

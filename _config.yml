@@ -1,6 +1,6 @@
 # Site settings
 title: Stormlantern Blog
-email: dirk,louwers@stormlantern.nl
+email: dirk.louwers@stormlantern.nl
 description: >
   Blogging home for Dirk Louwers
 baseurl: "" # the subpath of your site, e.g. /blog/
