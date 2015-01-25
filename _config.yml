@@ -2,8 +2,8 @@
 
 title:            Stormlantern Blog
 locale:           en_US
-url:              http://localhost:4000
-#url:              http://blog.stormlantern.nl
+#url:              http://localhost:4000
+url:              http://blog.stormlantern.nl
 
 
 # Jekyll configuration
