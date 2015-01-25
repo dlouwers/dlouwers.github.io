@@ -2,7 +2,6 @@
 layout: post
 title: Peace of mind in a state of overload
 date: '2015-01-04T08:03:00.000-08:00'
-author: Dirk Louwers
 tags:
 modified_time: '2015-01-04T08:03:33.263-08:00'
 thumbnail: http://2.bp.blogspot.com/-5pn9WY4q1xU/VJCHXMNlL-I/AAAAAAAADuw/14J5Xfpo8ug/s72-c/gtd_chart.png

@@ -2,7 +2,6 @@
 layout: post
 title: Musings on setting up a nice web application structure using Spray and ScalaJS
 date: '2014-07-15T14:33:00.002-07:00'
-author: Dirk Louwers
 tags:
 - spray
 - sbt

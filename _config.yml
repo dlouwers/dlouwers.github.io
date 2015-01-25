@@ -1,14 +1,60 @@
-# Site settings
-title: Stormlantern Blog
-email: dirk.louwers@stormlantern.nl
-description: >
-  Blogging home for Dirk Louwers
-baseurl: "" # the subpath of your site, e.g. /blog/
-url: "http://blog.stormlantern.nl" # the base hostname & protocol for your site
-twitter_username: dirk_louwers
-github_username:  dlouwers
-timezone: Europe/Amsterdam
+# Site wide configuration
 
-# Build settings
-markdown: kramdown
+title:            Stormlantern Blog
+locale:           en_US
+url:              http://localhost:4000
+#url:              http://blog.stormlantern.nl
+
+
+# Jekyll configuration
+
+permalink:   /:categories/:title/
+markdown:    kramdown
 highlighter: pygments
+sass:
+  sass_dir: _sass
+  style: compressed
+gems:
+  - jekyll-sitemap
+
+kramdown:
+  auto_ids: true
+  footnote_nr: 1
+  entity_output: as_char
+  toc_levels: 1..6
+  use_coderay: false
+
+
+# Site owner
+owner:
+  name: Dirk Louwers
+  avatar: dirk.jpg
+  bio: "Dirk works as a full stack consultant for Xebia and has been coding in Scala since 2007. He loves developing non-blocking highly scalable software solutions."
+  email:
+  disqus-shortname:
+  twitter: dirk_louwers
+  facebook: #username
+  google:
+    plus: #username
+    analytics:
+    verify:
+    ad-client:
+    ad-slot:
+  bing-verify:
+  github: dlouwers
+  stackoverflow: #http://stackoverflow.com/users/123456/username
+  linkedin: dlouwers
+  instagram: #username
+  lastfm: #username
+  tumblr: #username
+  pinterest: #username
+  foursquare: #username
+  steam: #username
+  dribbble: #username
+  youtube: #username
+  soundcloud: #username
+  weibo: #username
+  flickr: #username
+
+include: [".htaccess"]
+exclude: ["lib", "config.rb", "Capfile", "config", "log", "Rakefile", "Rakefile.rb", "tmp", "less", "*.sublime-project", "*.sublime-workspace", "test", "spec", "Gruntfile.js", "package.json", "node_modules", "Gemfile", "Gemfile.lock", "LICENSE", "README.md"]

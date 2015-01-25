@@ -2,7 +2,6 @@
 layout: post
 title: Try is free in the Future
 date: '2015-01-18T18:21:00.000+02:00'
-author: Dirk Louwers
 tags:
 - scala
 modified_time: '2015-01-18T18:21:00.000+02:00'
