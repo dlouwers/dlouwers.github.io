@@ -1,0 +1,95 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import BaseLayout from './BaseLayout.astro';
+import '../styles/prose.css';
+import TagChip from '../components/TagChip.astro';
+import Giscus from '../components/Giscus.astro';
+
+interface Props {
+  post: CollectionEntry<'posts'>;
+  prev: CollectionEntry<'posts'> | null;
+  next: CollectionEntry<'posts'> | null;
+}
+const { post, prev, next } = Astro.props;
+const { title, date, summary, tags } = post.data;
+const dateLabel = date.toISOString().slice(0, 10);
+---
+<BaseLayout title={title} description={summary}>
+  <article class="container post">
+    <header class="post-head">
+      <h1>{title}</h1>
+      <p class="meta">
+        <time datetime={date.toISOString()}>{dateLabel}</time>
+        {tags.length > 0 && <span class="sep">·</span>}
+        {tags.map((tag) => <TagChip tag={tag} />)}
+      </p>
+    </header>
+    <div class="prose">
+      <slot />
+    </div>
+
+    <nav class="post-nav" aria-label="Post navigation">
+      {prev ? (
+        <a class="prev" href={`/posts/${prev.id}/`}>
+          <span class="dir">← Previous</span>
+          <span class="t">{prev.data.title}</span>
+        </a>
+      ) : <span />}
+      {next ? (
+        <a class="next" href={`/posts/${next.id}/`}>
+          <span class="dir">Next →</span>
+          <span class="t">{next.data.title}</span>
+        </a>
+      ) : <span />}
+    </nav>
+
+    <Giscus />
+  </article>
+</BaseLayout>
+
+<style>
+  .post { padding-top: var(--sl-space-8); padding-bottom: var(--sl-space-8); }
+
+  .post-head { margin-bottom: var(--sl-space-8); }
+  .post-head h1 {
+    font-family: var(--sl-font-family-display);
+    font-size: var(--sl-font-size-3xl);
+    font-weight: var(--sl-font-weight-heavy);
+    color: var(--sl-color-ink);
+    line-height: var(--sl-font-line-height-tight);
+    letter-spacing: var(--sl-font-letter-spacing-snug);
+    margin: 0 0 var(--sl-space-3);
+  }
+  .post-head .meta {
+    color: var(--sl-color-muted);
+    font-size: var(--sl-font-size-sm);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--sl-space-2);
+  }
+  .post-head .sep { opacity: 0.5; }
+
+  .post-nav {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--sl-space-4);
+    margin-top: var(--sl-space-12);
+    padding-top: var(--sl-space-6);
+    border-top: 1px solid var(--sl-color-line);
+  }
+  .post-nav a {
+    display: flex;
+    flex-direction: column;
+    text-decoration: none;
+    padding: var(--sl-space-3) var(--sl-space-4);
+    border: 1px solid var(--sl-color-line);
+    border-radius: var(--sl-radius-md);
+  }
+  .post-nav a:hover { border-color: var(--sl-color-accent); }
+  .post-nav .next { text-align: right; grid-column: 2; }
+  .post-nav .prev { grid-column: 1; }
+  .post-nav .dir { font-size: var(--sl-font-size-sm); color: var(--sl-color-muted); }
+  .post-nav .t { color: var(--sl-color-ink); margin-top: var(--sl-space-1); }
+</style>

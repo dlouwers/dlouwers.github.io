@@ -1,0 +1,22 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout title="Not found — Dirk Louwers" description="That page does not exist.">
+  <div class="container">
+    <h1>404</h1>
+    <p>That page does not exist (or has migrated). Try the <a href="/">home page</a>.</p>
+  </div>
+</BaseLayout>
+
+<style>
+  .container { text-align: center; padding-top: var(--sl-space-12); padding-bottom: var(--sl-space-12); }
+  h1 {
+    font-family: var(--sl-font-family-display);
+    font-size: 6rem;
+    font-weight: var(--sl-font-weight-heavy);
+    color: var(--sl-color-ink);
+    margin: 0;
+    line-height: 1;
+  }
+  p { color: var(--sl-color-muted); margin-top: var(--sl-space-4); }
+</style>

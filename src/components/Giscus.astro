@@ -1,0 +1,78 @@
+---
+// Comments via Giscus (GitHub Discussions backend).
+//
+// SETUP TODO (one-time, before this works):
+//   1. Repo Settings → Features → enable Discussions
+//   2. Create a Discussion category named "Comments"
+//      (Type: Announcement so only maintainers can start threads)
+//   3. Install the Giscus app on dlouwers/dlouwers.github.io:
+//      https://github.com/apps/giscus
+//   4. Visit https://giscus.app, configure repo + category, copy
+//      the data-repo-id and data-category-id values, paste below.
+//   5. Remove the placeholder block + setup notice, uncomment the script.
+//
+// The bridge listens for `sl-theme-change` on document (dispatched by
+// ThemeToggle) and forwards the corresponding Giscus theme to the iframe
+// via postMessage so comments follow the site theme.
+
+const REPO_ID = ''; // ← paste data-repo-id here
+const CATEGORY_ID = ''; // ← paste data-category-id here
+const ENABLED = REPO_ID && CATEGORY_ID;
+---
+{ENABLED ? (
+  <>
+    <div id="giscus-container"></div>
+    <script is:inline
+      src="https://giscus.app/client.js"
+      data-repo="dlouwers/dlouwers.github.io"
+      data-repo-id={REPO_ID}
+      data-category="Comments"
+      data-category-id={CATEGORY_ID}
+      data-mapping="pathname"
+      data-strict="0"
+      data-reactions-enabled="1"
+      data-emit-metadata="0"
+      data-input-position="bottom"
+      data-theme="preferred_color_scheme"
+      data-lang="en"
+      data-loading="lazy"
+      crossorigin="anonymous"
+      async
+    ></script>
+    <script>
+      const giscusTheme = (state: 'system' | 'light' | 'dark') => {
+        if (state === 'light') return 'light';
+        if (state === 'dark') return 'dark_dimmed';
+        return 'preferred_color_scheme';
+      };
+      const send = (theme: string) => {
+        const frame = document.querySelector<HTMLIFrameElement>('iframe.giscus-frame');
+        if (!frame) return;
+        frame.contentWindow?.postMessage(
+          { giscus: { setConfig: { theme } } },
+          'https://giscus.app'
+        );
+      };
+      document.addEventListener('sl-theme-change', (e) => {
+        const detail = (e as CustomEvent).detail as { theme: 'system' | 'light' | 'dark' };
+        send(giscusTheme(detail.theme));
+      });
+    </script>
+  </>
+) : (
+  <aside class="giscus-todo">
+    Comments are not configured yet. See <code>src/components/Giscus.astro</code>
+    for setup steps.
+  </aside>
+)}
+
+<style>
+  .giscus-todo {
+    margin-top: var(--sl-space-8);
+    padding: var(--sl-space-3) var(--sl-space-4);
+    border: 1px dashed var(--sl-color-line);
+    border-radius: var(--sl-radius-sm);
+    color: var(--sl-color-muted);
+    font-size: var(--sl-font-size-sm);
+  }
+</style>

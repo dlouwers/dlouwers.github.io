@@ -1,0 +1,64 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+const posts = await getCollection('posts', ({ data }) => !data.draft);
+const counts = new Map<string, number>();
+for (const post of posts) {
+  for (const tag of post.data.tags) {
+    counts.set(tag, (counts.get(tag) ?? 0) + 1);
+  }
+}
+const tags = [...counts.entries()].sort(
+  (a, b) => b[1] - a[1] || a[0].localeCompare(b[0])
+);
+---
+<BaseLayout title="Tags — Dirk Louwers" description="All tags used across posts.">
+  <div class="container">
+    <h1>Tags</h1>
+    {tags.length === 0
+      ? <p>No tags yet.</p>
+      : (
+        <ul class="tag-cloud">
+          {tags.map(([tag, n]) => (
+            <li>
+              <a href={`/tags/${tag}/`}>
+                <sl-badge variant="neutral">#{tag}</sl-badge>
+                <span class="count">{n}</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      )
+    }
+  </div>
+</BaseLayout>
+
+<style>
+  .container h1 {
+    font-family: var(--sl-font-family-display);
+    font-size: var(--sl-font-size-2xl);
+    font-weight: var(--sl-font-weight-bold);
+    color: var(--sl-color-ink);
+    margin: var(--sl-space-8) 0 var(--sl-space-6);
+  }
+  .tag-cloud {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sl-space-3);
+  }
+  .tag-cloud a {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--sl-space-2);
+    text-decoration: none;
+    color: var(--sl-color-body);
+  }
+  .tag-cloud .count {
+    font-size: var(--sl-font-size-sm);
+    color: var(--sl-color-muted);
+  }
+</style>
