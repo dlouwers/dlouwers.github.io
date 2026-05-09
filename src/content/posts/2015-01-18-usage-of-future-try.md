@@ -1,12 +1,10 @@
 ---
-layout: post
 title: Try is free in the Future
-date: '2015-01-18T18:21:00.000+02:00'
-author: Dirk Louwers
-tags:
-- scala
-modified_time: '2015-01-18T18:21:00.000+02:00'
+date: 2015-01-18
+summary: Wrapping a Future in a Try is usually redundant — Future already carries failure. Here's a closer look at when (if ever) the wrapper adds value.
+tags: [scala]
 ---
+
 Lately I have seen a few developers consistently use a Try inside of a Future in
 order to make error handling easier. Here I will investigate if this has any
 merits or whether a Future on it's own offers enough error handle.
@@ -14,7 +12,7 @@ merits or whether a Future on it's own offers enough error handle.
 If you look at the following code there is nothing that a Future can't supply
 but a Try can:
 
-{% highlight scala %}
+```scala
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{Await, Future, Awaitable}
 import scala.concurrent.duration._
@@ -54,14 +52,14 @@ object Main extends App {
     println(result)
   }
 }
-{% endhighlight %}
+```
 
 After giving it some thought the only situation where I could imagine Try
 being useful in conjunction with Future is when awaiting a Future but not wanting
 to deal with error situations yet. The times I would be awaiting a future are
 very few in practice though. But when needed something like this migth do:
 
-{% highlight scala %}
+```scala
 object TryAwait {
   def ready[T](awaitable: Awaitable[T], atMost: Duration): Try[T] = {
     Try {
@@ -69,7 +67,7 @@ object TryAwait {
     }
   }
 }
-{% endhighlight %}
+```
 
 If you do feel that using Trys inside of Futures adds value to your codebase
 please let me know.
