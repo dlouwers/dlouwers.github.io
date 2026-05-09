@@ -1,0 +1,43 @@
+---
+import ThemeToggle from './ThemeToggle.astro';
+---
+<header class="site-header">
+  <div class="header-inner">
+    <a href="/" class="brand-lockup" aria-label="Stormlantern home">
+      <img class="light" src="/brand/lockup.svg" alt="Stormlantern" height="28" />
+      <img class="dark" src="/brand/lockup-dark.svg" alt="Stormlantern" height="28" />
+    </a>
+    <nav>
+      <a href="/">Home</a>
+      <a href="/tags/">Tags</a>
+      <a href="/rss.xml">RSS</a>
+      <ThemeToggle />
+    </nav>
+  </div>
+</header>
+
+<style>
+  .site-header {
+    border-bottom: 1px solid var(--sl-color-line);
+    background: var(--sl-color-surface);
+  }
+  .header-inner {
+    width: 100%;
+    max-width: 72ch;
+    margin: 0 auto;
+    padding: var(--sl-space-4);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--sl-space-4);
+  }
+  .brand-lockup img { display: block; height: 28px; width: auto; }
+  nav {
+    display: flex;
+    align-items: center;
+    gap: var(--sl-space-4);
+    font-size: var(--sl-font-size-sm);
+  }
+  nav a { color: var(--sl-color-body); text-decoration: none; }
+  nav a:hover { color: var(--sl-color-ink); }
+</style>

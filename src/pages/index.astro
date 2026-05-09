@@ -1,17 +1,10 @@
 ---
-
+import BaseLayout from '../layouts/BaseLayout.astro';
 ---
-
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
-	</head>
-	<body>
-		<h1>Astro</h1>
-	</body>
-</html>
+<BaseLayout title="Dirk Louwers">
+  <div class="container">
+    <h1>Hello, again.</h1>
+    <p>The blog is being rebuilt. Posts are coming back online soon.</p>
+    <p><sl-button variant="primary">Sample button (sl-button smoke test)</sl-button></p>
+  </div>
+</BaseLayout>
