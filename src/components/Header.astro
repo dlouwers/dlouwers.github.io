@@ -31,7 +31,16 @@ import ThemeToggle from './ThemeToggle.astro';
     justify-content: space-between;
     gap: var(--sl-space-4);
   }
-  .brand-lockup img { display: block; height: 28px; width: auto; }
+  .brand-lockup { display: inline-flex; align-items: center; }
+  .brand-lockup img { height: 28px; width: auto; }
+  .brand-lockup .light { display: block; }
+  .brand-lockup .dark  { display: none; }
+  :root[data-theme="dark"] .brand-lockup .light { display: none; }
+  :root[data-theme="dark"] .brand-lockup .dark  { display: block; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme]) .brand-lockup .light { display: none; }
+    :root:not([data-theme]) .brand-lockup .dark  { display: block; }
+  }
   nav {
     display: flex;
     align-items: center;

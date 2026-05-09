@@ -36,14 +36,5 @@ main {
   min-height: 60vh;
 }
 
-/* Brand lockup: show the variant matching the current theme. */
-.brand-lockup .light { display: inline; }
-.brand-lockup .dark { display: none; }
-:root[data-theme="dark"] .brand-lockup .light,
-:root:not([data-theme]) .brand-lockup .light { /* default (system): keep light */ }
-:root[data-theme="dark"] .brand-lockup .light { display: none; }
-:root[data-theme="dark"] .brand-lockup .dark { display: inline; }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme]) .brand-lockup .light { display: none; }
-  :root:not([data-theme]) .brand-lockup .dark { display: inline; }
-}
+/* Brand lockup variant switching lives inside Header.astro so its scoped
+   rules co-locate with the brand element they target. */
