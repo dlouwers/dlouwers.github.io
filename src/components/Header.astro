@@ -1,5 +1,11 @@
 ---
 import ThemeToggle from './ThemeToggle.astro';
+
+const path = Astro.url.pathname;
+const isActive = (href: string) => {
+  if (href === '/') return path === '/';
+  return path === href || path.startsWith(href);
+};
 ---
 <header class="site-header">
   <div class="header-inner">
@@ -8,9 +14,9 @@ import ThemeToggle from './ThemeToggle.astro';
       <img class="dark" src="/brand/lockup-dark.svg" alt="Stormlantern" height="28" />
     </a>
     <nav>
-      <a href="/">Home</a>
-      <a href="/tags/">Tags</a>
-      <a href="/rss.xml">RSS</a>
+      <a href="/" class:list={['nav-link', { active: isActive('/') }]}>Home</a>
+      <a href="/tags/" class:list={['nav-link', { active: isActive('/tags/') }]}>Tags</a>
+      <a href="/rss.xml" class="nav-link">RSS</a>
       <ThemeToggle />
     </nav>
   </div>
@@ -47,6 +53,17 @@ import ThemeToggle from './ThemeToggle.astro';
     gap: var(--sl-space-4);
     font-size: var(--sl-font-size-sm);
   }
-  nav a { color: var(--sl-color-body); text-decoration: none; }
-  nav a:hover { color: var(--sl-color-ink); }
+  .nav-link {
+    color: var(--sl-color-body);
+    text-decoration: none;
+    padding-bottom: 2px;
+    border-bottom: 2px solid transparent;
+    transition: color 120ms cubic-bezier(0.2, 0, 0.2, 1),
+                border-color 120ms cubic-bezier(0.2, 0, 0.2, 1);
+  }
+  .nav-link:hover { color: var(--sl-color-ink); }
+  .nav-link.active {
+    color: var(--sl-color-ink);
+    border-bottom-color: var(--sl-color-accent);
+  }
 </style>
