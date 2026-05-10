@@ -73,14 +73,25 @@ main {
   display: block;
 }
 
-/* Wave divider — subtle SVG separator, muted colour, used between the
-   home lede and the post feed (and as a small accent on 404). */
+/* Wave divider — subtle SVG separator, used between the home lede and
+   the post feed (and as a small accent on 404). The SVG is inlined so
+   `currentColor` inherits from this rule. The dark-mode override bumps
+   to `--sl-color-muted` because line (#1f4346) against paper (#06181a)
+   has too little luminance contrast — the wave reads as flat. */
 .wave-divider {
   display: flex;
   justify-content: center;
   align-items: center;
   margin: var(--sl-space-8) 0;
   color: var(--sl-color-line);
+}
+@media (prefers-color-scheme: dark) {
+  :where(html:not([data-theme="light"])) .wave-divider {
+    color: var(--sl-color-muted);
+  }
+}
+:where(html[data-theme="dark"]) .wave-divider {
+  color: var(--sl-color-muted);
 }
 .wave-divider svg {
   width: 96px;
