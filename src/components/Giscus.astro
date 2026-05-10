@@ -1,22 +1,11 @@
 ---
-// Comments via Giscus (GitHub Discussions backend).
-//
-// SETUP TODO (one-time, before this works):
-//   1. Repo Settings → Features → enable Discussions
-//   2. Create a Discussion category named "Comments"
-//      (Type: Announcement so only maintainers can start threads)
-//   3. Install the Giscus app on dlouwers/dlouwers.github.io:
-//      https://github.com/apps/giscus
-//   4. Visit https://giscus.app, configure repo + category, copy
-//      the data-repo-id and data-category-id values, paste below.
-//   5. Remove the placeholder block + setup notice, uncomment the script.
-//
-// The bridge listens for `sl-theme-change` on document (dispatched by
-// ThemeToggle) and forwards the corresponding Giscus theme to the iframe
-// via postMessage so comments follow the site theme.
+// Comments via Giscus (GitHub Discussions backend, "Comments" category).
+// Theme follow: listens for `sl-theme-change` on document (dispatched by
+// ThemeToggle) and postMessages the corresponding Giscus theme to the iframe.
+// IDs come from giscus.app for dlouwers/dlouwers.github.io.
 
-const REPO_ID = ''; // ← paste data-repo-id here
-const CATEGORY_ID = ''; // ← paste data-category-id here
+const REPO_ID = 'MDEwOlJlcG9zaXRvcnkyODg1NDY0Ng==';
+const CATEGORY_ID = 'DIC_kwDOAbhJds4C8s4S';
 const ENABLED = REPO_ID && CATEGORY_ID;
 ---
 {ENABLED ? (
