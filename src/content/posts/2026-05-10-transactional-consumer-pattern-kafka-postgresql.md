@@ -24,21 +24,23 @@ The reason this is hard is that Kafka and PostgreSQL don't share a transaction. 
 
 # The pattern
 
-```d2 Sequence: poll, then both writes inside one PostgreSQL transaction, then commit the offset back to the broker.
+```d2 Sequence: poll, then both writes inside one PostgreSQL transaction the consumer opens and commits, then commit the offset back to the broker.
 shape: sequence_diagram
 
 broker: Kafka broker
 consumer: Consumer service
 db: PostgreSQL
 
-broker -> consumer: poll() returns records
+broker -> consumer: "poll() returns records"
 
-consumer.txn: atomic DB transaction {
-  consumer.txn -> db: INSERT order
-  consumer.txn -> db: UPSERT kafka_offsets row
+"atomic DB transaction": {
+  consumer -> db: BEGIN
+  consumer -> db: "INSERT order"
+  consumer -> db: "UPSERT kafka_offsets row"
+  consumer -> db: COMMIT
 }
 
-consumer -> broker: commitSync(offset + 1)
+consumer -> broker: "commitSync(offset + 1)"
 ```
 
 The trick is to treat the consumer offset as just another row in your database, alongside the business data. A single `BEGIN…COMMIT` covers both writes. The Kafka offset that the broker tracks becomes a hint, not the source of truth — on restart you read the last processed offset from the database and `seek()` the consumer to that position before polling.
