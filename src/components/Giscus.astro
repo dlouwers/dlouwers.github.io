@@ -1,7 +1,10 @@
 ---
 // Comments via Giscus (GitHub Discussions backend, "Comments" category).
-// Theme follow: listens for `sl-theme-change` on document (dispatched by
-// ThemeToggle) and postMessages the corresponding Giscus theme to the iframe.
+// Theme follow: the giscus iframe is on giscus.app, so its own
+// `prefers-color-scheme` reflects the OS, not our site's [data-theme].
+// We resolve the *effective* site theme in JS and postMessage it to the
+// iframe — on its first handshake, on `sl-theme-change`, and on OS scheme
+// flips while the site is in system mode.
 // IDs come from giscus.app for dlouwers/dlouwers.github.io.
 
 const REPO_ID = 'MDEwOlJlcG9zaXRvcnkyODg1NDY0Ng==';
@@ -22,18 +25,22 @@ const ENABLED = REPO_ID && CATEGORY_ID;
       data-reactions-enabled="1"
       data-emit-metadata="0"
       data-input-position="bottom"
-      data-theme="preferred_color_scheme"
+      data-theme="light"
       data-lang="en"
       data-loading="lazy"
       crossorigin="anonymous"
       async
     ></script>
     <script>
-      const giscusTheme = (state: 'system' | 'light' | 'dark') => {
-        if (state === 'light') return 'light';
-        if (state === 'dark') return 'dark_dimmed';
-        return 'preferred_color_scheme';
+      const darkQuery = window.matchMedia('(prefers-color-scheme: dark)');
+
+      const effectiveTheme = (): 'light' | 'dark_dimmed' => {
+        const attr = document.documentElement.getAttribute('data-theme');
+        if (attr === 'light') return 'light';
+        if (attr === 'dark') return 'dark_dimmed';
+        return darkQuery.matches ? 'dark_dimmed' : 'light';
       };
+
       const send = (theme: string) => {
         const frame = document.querySelector<HTMLIFrameElement>('iframe.giscus-frame');
         if (!frame) return;
@@ -42,9 +49,28 @@ const ENABLED = REPO_ID && CATEGORY_ID;
           'https://giscus.app'
         );
       };
-      document.addEventListener('sl-theme-change', (e) => {
-        const detail = (e as CustomEvent).detail as { theme: 'system' | 'light' | 'dark' };
-        send(giscusTheme(detail.theme));
+
+      // First handshake from the iframe → push the current effective theme.
+      // The iframe sends its first message once it's ready to accept setConfig.
+      let synced = false;
+      window.addEventListener('message', (e) => {
+        if (synced) return;
+        if (e.origin !== 'https://giscus.app') return;
+        if (!(e.data && (e.data as { giscus?: unknown }).giscus)) return;
+        synced = true;
+        send(effectiveTheme());
+      });
+
+      document.addEventListener('sl-theme-change', () => {
+        send(effectiveTheme());
+      });
+
+      // When the site is in system mode (no [data-theme] attribute), follow
+      // OS scheme flips live. If the user has explicitly toggled, ignore —
+      // the site itself ignores OS in that case too.
+      darkQuery.addEventListener('change', () => {
+        if (document.documentElement.hasAttribute('data-theme')) return;
+        send(effectiveTheme());
       });
     </script>
   </>
