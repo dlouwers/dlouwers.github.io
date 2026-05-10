@@ -6,10 +6,7 @@ import PostCard from '../components/PostCard.astro';
 const posts = (await getCollection('posts', ({ data }) => !data.draft))
   .sort((a, b) => +b.data.date - +a.data.date);
 
-// Hero image: replace /img/hero.jpg (or .webp) with the AI-generated photo.
-// Until that file exists, the placeholder SVG renders. The duotone filter
-// applies regardless, so the swap is one-line.
-const heroSrc = '/img/hero-placeholder.svg';
+const heroSrc = '/img/hero.jpg';
 const heroAlt = 'A lantern glow against a stormy sea — Stormlantern.';
 ---
 <BaseLayout title="Dirk Louwers">
