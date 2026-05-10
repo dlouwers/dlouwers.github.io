@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 450" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+  <!-- Designed to read correctly under the SVG duotone filter (luminance mapped
+       to a dark-teal palette). Distant horizon, faint waves, tiny lighthouse
+       silhouette. Replace this file with the AI-generated hero photo and the
+       same filter will tint it to brand. -->
+  <rect width="1200" height="450" fill="#1a1a1a"/>
+  <line x1="0" y1="280" x2="1200" y2="280" stroke="#3a3a3a" stroke-width="2"/>
+  <path d="M0 280 Q 75 268 150 280 T 300 280 T 450 280 T 600 280 T 750 280 T 900 280 T 1050 280 T 1200 280" stroke="#525252" stroke-width="1.5" fill="none"/>
+  <path d="M0 320 Q 75 308 150 320 T 300 320 T 450 320 T 600 320 T 750 320 T 900 320 T 1050 320 T 1200 320" stroke="#404040" stroke-width="1.25" fill="none" opacity="0.6"/>
+  <!-- distant lighthouse silhouette, lower-right -->
+  <rect x="952" y="240" width="6" height="40" fill="#525252"/>
+  <circle cx="955" cy="240" r="4" fill="#787878"/>
+</svg>

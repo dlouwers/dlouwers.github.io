@@ -3,13 +3,17 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 ---
 <BaseLayout title="Not found — Dirk Louwers" description="That page does not exist.">
   <div class="container">
+    <div class="wave-divider wave-divider--sm" aria-hidden="true">
+      <img src="/brand/wave-divider.svg" alt="" width="64" height="6" />
+    </div>
     <h1>404</h1>
     <p>That page does not exist (or has migrated). Try the <a href="/">home page</a>.</p>
   </div>
 </BaseLayout>
 
 <style>
-  .container { text-align: center; padding-top: var(--sl-space-12); padding-bottom: var(--sl-space-12); }
+  .container { text-align: center; padding-top: var(--sl-space-16); padding-bottom: var(--sl-space-16); }
+  .wave-divider { margin: 0 auto var(--sl-space-6); }
   h1 {
     font-family: var(--sl-font-family-display);
     font-size: 6rem;
