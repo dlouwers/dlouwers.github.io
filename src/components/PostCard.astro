@@ -5,15 +5,15 @@ import TagChip from './TagChip.astro';
 interface Props { post: CollectionEntry<'posts'>; }
 const { post } = Astro.props;
 const { title, date, summary, tags } = post.data;
-const dateLabel = date.toISOString().slice(0, 10);
+const dateLabel = date.toLocaleDateString('en-US', {
+  year: 'numeric', month: 'long', day: 'numeric'
+});
 ---
 <article class="post-card">
-  <header>
-    <h2><a href={`/posts/${post.id}/`}>{title}</a></h2>
-    <p class="meta">
-      <time datetime={date.toISOString()}>{dateLabel}</time>
-    </p>
-  </header>
+  <p class="meta">
+    <time datetime={date.toISOString()}>{dateLabel}</time>
+  </p>
+  <h2><a href={`/posts/${post.id}/`}>{title}</a></h2>
   <p class="summary">{summary}</p>
   {tags.length > 0 && (
     <p class="tags">
@@ -24,30 +24,31 @@ const dateLabel = date.toISOString().slice(0, 10);
 
 <style>
   .post-card {
-    padding: var(--sl-space-5) 0;
+    padding: var(--sl-space-6) 0;
     border-bottom: 1px solid var(--sl-color-line);
   }
   .post-card:last-child { border-bottom: 0; }
-
-  .post-card h2 {
-    font-family: var(--sl-font-family-display);
-    font-size: var(--sl-font-size-xl);
-    font-weight: var(--sl-font-weight-semibold);
-    color: var(--sl-color-ink);
-    margin: 0 0 var(--sl-space-1);
-    line-height: var(--sl-font-line-height-tight);
-  }
-  .post-card h2 a {
-    color: inherit;
-    text-decoration: none;
-  }
-  .post-card h2 a:hover { color: var(--sl-color-accent); }
 
   .meta {
     font-size: var(--sl-font-size-sm);
     color: var(--sl-color-muted);
     margin: 0 0 var(--sl-space-2);
   }
+
+  .post-card h2 {
+    font-family: var(--sl-font-family-display);
+    font-size: var(--sl-font-size-xl);
+    font-weight: var(--sl-font-weight-semibold);
+    color: var(--sl-color-ink);
+    margin: 0 0 var(--sl-space-2);
+    line-height: var(--sl-font-line-height-tight);
+    letter-spacing: var(--sl-font-letter-spacing-snug);
+  }
+  .post-card h2 a {
+    color: inherit;
+    text-decoration: none;
+  }
+  .post-card h2 a:hover { color: var(--sl-color-accent); }
 
   .summary {
     color: var(--sl-color-body);
