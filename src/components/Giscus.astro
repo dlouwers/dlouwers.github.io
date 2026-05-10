@@ -5,15 +5,25 @@
 // We resolve the *effective* site theme in JS and postMessage it to the
 // iframe — on its first handshake, on `sl-theme-change`, and on OS scheme
 // flips while the site is in system mode.
+//
+// In production we serve a Stormlantern-branded custom theme from
+// /giscus/{light,dark}.css; the giscus iframe (on giscus.app) fetches
+// these by absolute URL. In dev that fetch isn't reachable from the
+// iframe (mixed-origin / localhost), so we fall back to giscus's
+// built-in `light` and `dark_dimmed` themes.
 // IDs come from giscus.app for dlouwers/dlouwers.github.io.
 
 const REPO_ID = 'MDEwOlJlcG9zaXRvcnkyODg1NDY0Ng==';
 const CATEGORY_ID = 'DIC_kwDOAbhJds4C8s4S';
 const ENABLED = REPO_ID && CATEGORY_ID;
+const SITE_ORIGIN = Astro.site?.origin ?? '';
+const CUSTOM_THEME_BASE = import.meta.env.PROD && SITE_ORIGIN
+  ? `${SITE_ORIGIN}/giscus`
+  : null;
 ---
 {ENABLED ? (
   <>
-    <div id="giscus-container"></div>
+    <div id="giscus-container" data-theme-base={CUSTOM_THEME_BASE ?? ''}></div>
     <script is:inline
       src="https://giscus.app/client.js"
       data-repo="dlouwers/dlouwers.github.io"
@@ -33,12 +43,15 @@ const ENABLED = REPO_ID && CATEGORY_ID;
     ></script>
     <script>
       const darkQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      const themeBase = (
+        document.getElementById('giscus-container') as HTMLElement | null
+      )?.dataset.themeBase || '';
 
-      const effectiveTheme = (): 'light' | 'dark_dimmed' => {
+      const effectiveTheme = (): string => {
         const attr = document.documentElement.getAttribute('data-theme');
-        if (attr === 'light') return 'light';
-        if (attr === 'dark') return 'dark_dimmed';
-        return darkQuery.matches ? 'dark_dimmed' : 'light';
+        const dark = attr === 'dark' || (attr === null && darkQuery.matches);
+        if (themeBase) return `${themeBase}/${dark ? 'dark' : 'light'}.css`;
+        return dark ? 'dark_dimmed' : 'light';
       };
 
       const send = (theme: string) => {
