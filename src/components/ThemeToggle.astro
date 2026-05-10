@@ -1,0 +1,55 @@
+---
+// Three-state theme toggle: system → light → dark → system.
+// Persists to localStorage 'sl-theme' (unset = system).
+// Dispatches `sl-theme-change` on document so other components (Giscus) can react.
+---
+<button id="theme-toggle" type="button" aria-label="Toggle theme" data-state="system">
+  <span data-when="system">System</span>
+  <span data-when="light">Light</span>
+  <span data-when="dark">Dark</span>
+</button>
+
+<style>
+  #theme-toggle {
+    appearance: none;
+    background: transparent;
+    border: 1px solid var(--sl-color-line);
+    color: var(--sl-color-body);
+    font: inherit;
+    font-size: var(--sl-font-size-sm);
+    padding: var(--sl-space-1) var(--sl-space-3);
+    border-radius: var(--sl-radius-sm);
+    cursor: pointer;
+    line-height: 1;
+  }
+  #theme-toggle:hover { border-color: var(--sl-color-ink); }
+  #theme-toggle span { display: none; }
+  #theme-toggle[data-state="system"] [data-when="system"],
+  #theme-toggle[data-state="light"]  [data-when="light"],
+  #theme-toggle[data-state="dark"]   [data-when="dark"] { display: inline; }
+</style>
+
+<script>
+  const btn = document.getElementById('theme-toggle')!;
+  const cycle = ['system', 'light', 'dark'] as const;
+  const current = () =>
+    (localStorage.getItem('sl-theme') as 'light' | 'dark' | null) ?? 'system';
+  const apply = (next: 'system' | 'light' | 'dark') => {
+    if (next === 'system') {
+      localStorage.removeItem('sl-theme');
+      document.documentElement.removeAttribute('data-theme');
+    } else {
+      localStorage.setItem('sl-theme', next);
+      document.documentElement.setAttribute('data-theme', next);
+    }
+    btn.dataset.state = next;
+    document.dispatchEvent(
+      new CustomEvent('sl-theme-change', { detail: { theme: next } })
+    );
+  };
+  btn.dataset.state = current();
+  btn.addEventListener('click', () => {
+    const i = cycle.indexOf(current() as any);
+    apply(cycle[(i + 1) % cycle.length]);
+  });
+</script>

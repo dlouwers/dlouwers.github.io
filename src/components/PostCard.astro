@@ -1,0 +1,58 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import TagChip from './TagChip.astro';
+
+interface Props { post: CollectionEntry<'posts'>; }
+const { post } = Astro.props;
+const { title, date, summary, tags } = post.data;
+const dateLabel = date.toISOString().slice(0, 10);
+---
+<article class="post-card">
+  <header>
+    <h2><a href={`/posts/${post.id}/`}>{title}</a></h2>
+    <p class="meta">
+      <time datetime={date.toISOString()}>{dateLabel}</time>
+    </p>
+  </header>
+  <p class="summary">{summary}</p>
+  {tags.length > 0 && (
+    <p class="tags">
+      {tags.map((tag) => <TagChip tag={tag} />)}
+    </p>
+  )}
+</article>
+
+<style>
+  .post-card {
+    padding: var(--sl-space-5) 0;
+    border-bottom: 1px solid var(--sl-color-line);
+  }
+  .post-card:last-child { border-bottom: 0; }
+
+  .post-card h2 {
+    font-family: var(--sl-font-family-display);
+    font-size: var(--sl-font-size-xl);
+    font-weight: var(--sl-font-weight-semibold);
+    color: var(--sl-color-ink);
+    margin: 0 0 var(--sl-space-1);
+    line-height: var(--sl-font-line-height-tight);
+  }
+  .post-card h2 a {
+    color: inherit;
+    text-decoration: none;
+  }
+  .post-card h2 a:hover { color: var(--sl-color-accent); }
+
+  .meta {
+    font-size: var(--sl-font-size-sm);
+    color: var(--sl-color-muted);
+    margin: 0 0 var(--sl-space-2);
+  }
+
+  .summary {
+    color: var(--sl-color-body);
+    margin: 0 0 var(--sl-space-3);
+  }
+
+  .tags { margin: 0; }
+</style>

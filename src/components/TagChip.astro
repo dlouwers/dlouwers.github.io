@@ -1,0 +1,18 @@
+---
+interface Props {
+  tag: string;
+  href?: string;
+}
+const { tag, href = `/tags/${tag}/` } = Astro.props;
+---
+<a href={href} class="tag-chip">
+  <sl-badge variant="neutral">#{tag}</sl-badge>
+</a>
+
+<style>
+  .tag-chip {
+    text-decoration: none;
+    font-size: var(--sl-font-size-sm);
+  }
+  .tag-chip + .tag-chip { margin-left: var(--sl-space-1); }
+</style>

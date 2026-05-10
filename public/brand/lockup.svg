@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 440 90" preserveAspectRatio="xMidYMid meet">
+  <!--
+    Stormlantern canonical lockup.
+
+    One artifact: teal panel · white inset box on the left holding the
+    teal lantern silhouette · white wordmark text on the right.
+
+    Mirrors the 2011 layout exactly. The teal panel is the brand
+    container; the white inset is what makes the teal lantern visible
+    against the brand colour; the white wordmark sits on the teal
+    field directly with no inset.
+
+    Hex values are hardcoded for portability — SVG `var()` doesn't
+    work when the file is loaded as <img>.
+
+    Wordmark uses Geist via font-family. For environments where Geist
+    isn't loaded, see lockup-paths.svg (forthcoming) — wordmark
+    converted to outlines.
+  -->
+
+  <!-- Outer teal panel -->
+  <rect x="0" y="0" width="440" height="90" fill="#006566"/>
+
+  <!-- White inset box on the left -->
+  <rect x="5" y="5" width="80" height="80" fill="#ffffff"/>
+
+  <!-- Teal lantern centered in the inset (55x68 silhouette → padded into 80x80 white box). -->
+  <g transform="translate(17.5,79) scale(0.1,-0.1)" fill="#006566" stroke="none">
+    <path d="M250 648 c-54 -13 -59 -30 -60 -190 -1 -79 -6 -178 -12 -220 -9 -67
+-8 -81 6 -103 12 -18 14 -36 10 -64 -8 -49 10 -61 93 -61 80 0 105 18 92 65
+-8 29 -7 39 7 52 14 14 15 27 8 82 -4 36 -9 134 -10 216 -1 83 -2 157 -3 166
+-3 45 -66 73 -131 57z m102 -38 c19 -24 23 -102 10 -189 -7 -43 -8 -44 -25
+-27 -13 13 -15 22 -7 31 8 9 3 14 -19 18 -34 7 -91 -6 -74 -16 15 -9 6 -37
+-12 -37 -17 0 -31 164 -16 202 20 53 106 63 143 18z m-112 -315 c-15 -28 -9
+-127 9 -133 20 -7 11 -23 -11 -20 -22 3 -23 7 -21 88 2 47 6 96 9 110 l6 25
+11 -23 c7 -16 7 -29 -3 -47z m116 -38 c12 -97 8 -117 -27 -117 -21 0 -26 16
+-7 22 16 6 23 114 8 133 -12 15 -5 74 7 61 4 -4 12 -48 19 -99z"/>
+  </g>
+
+  <!-- White wordmark on the teal panel, right of the inset.
+       STORM heavy + LANTERN regular per the split-weight convention.
+       y=58 places the cap-line baseline near the visual centre of the panel. -->
+  <text x="100" y="58" font-family="Geist, ui-sans-serif, system-ui, sans-serif" font-size="36" letter-spacing="-0.4" fill="#ffffff">
+    <tspan font-weight="800">STORM</tspan><tspan font-weight="400">LANTERN</tspan>
+  </text>
+</svg>

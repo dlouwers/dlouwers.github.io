@@ -1,0 +1,81 @@
+.prose {
+  font-family: var(--sl-font-family-body);
+  font-size: var(--sl-font-size-md);
+  line-height: var(--sl-font-line-height-loose);
+  color: var(--sl-color-body);
+  max-width: 68ch;
+}
+
+.prose > :first-child { margin-top: 0; }
+.prose > :last-child { margin-bottom: 0; }
+
+.prose h1, .prose h2, .prose h3, .prose h4 {
+  font-family: var(--sl-font-family-display);
+  color: var(--sl-color-ink);
+  letter-spacing: var(--sl-font-letter-spacing-snug);
+  line-height: var(--sl-font-line-height-tight);
+  margin-top: var(--sl-space-12);
+  margin-bottom: var(--sl-space-3);
+}
+.prose h1 { font-size: var(--sl-font-size-3xl); font-weight: var(--sl-font-weight-heavy); }
+.prose h2 { font-size: var(--sl-font-size-2xl); font-weight: var(--sl-font-weight-bold); }
+.prose h3 { font-size: var(--sl-font-size-xl);  font-weight: var(--sl-font-weight-semibold); }
+.prose h4 { font-size: var(--sl-font-size-lg);  font-weight: var(--sl-font-weight-semibold); }
+
+.prose p { margin: 0 0 var(--sl-space-4); }
+
+.prose strong { color: var(--sl-color-ink); font-weight: var(--sl-font-weight-semibold); }
+.prose em { font-style: italic; }
+
+.prose a {
+  color: var(--sl-color-accent);
+  text-decoration-color: color-mix(in srgb, var(--sl-color-accent) 40%, transparent);
+  text-underline-offset: 2px;
+}
+.prose a:hover { color: var(--sl-color-accent-hover, var(--sl-color-accent)); }
+
+.prose ul, .prose ol {
+  padding-left: var(--sl-space-5);
+  margin: 0 0 var(--sl-space-4);
+}
+.prose li + li { margin-top: var(--sl-space-1); }
+
+.prose blockquote {
+  border-left: 2px solid var(--sl-color-line);
+  padding: var(--sl-space-1) var(--sl-space-4);
+  color: var(--sl-color-muted);
+  margin: var(--sl-space-4) 0;
+  font-style: italic;
+}
+
+.prose hr {
+  border: 0;
+  border-top: 1px solid var(--sl-color-line);
+  margin: var(--sl-space-10) 0;
+}
+
+.prose figure { margin: var(--sl-space-6) 0; }
+.prose figure img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--sl-radius-md);
+}
+.prose figcaption {
+  color: var(--sl-color-muted);
+  font-size: var(--sl-font-size-sm);
+  margin-top: var(--sl-space-2);
+}
+
+/* Inline code (block code is owned by expressive-code) */
+.prose :not(pre) > code {
+  font-family: var(--sl-font-family-mono);
+  font-size: 0.92em;
+  background: var(--sl-color-paper);
+  border: 1px solid var(--sl-color-line);
+  padding: 0 0.3em;
+  border-radius: var(--sl-radius-xs);
+}
+
+/* Expressive-code wrapper sits as a direct .prose child. */
+.prose .expressive-code { margin: var(--sl-space-6) 0; }

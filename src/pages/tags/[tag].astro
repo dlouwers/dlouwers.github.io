@@ -1,0 +1,58 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PostCard from '../../components/PostCard.astro';
+
+export async function getStaticPaths() {
+  const posts = await getCollection('posts', ({ data }) => !data.draft);
+  const byTag = new Map<string, typeof posts>();
+  for (const post of posts) {
+    for (const tag of post.data.tags) {
+      const arr = byTag.get(tag) ?? [];
+      arr.push(post);
+      byTag.set(tag, arr);
+    }
+  }
+  return [...byTag.entries()].map(([tag, list]) => ({
+    params: { tag },
+    props: {
+      tag,
+      posts: list.sort((a, b) => +b.data.date - +a.data.date),
+    },
+  }));
+}
+
+const { tag, posts } = Astro.props;
+---
+<BaseLayout
+  title={`#${tag} — Dirk Louwers`}
+  description={`Posts tagged #${tag}.`}
+>
+  <div class="container">
+    <h1>
+      Posts tagged <sl-badge variant="neutral">#{tag}</sl-badge>
+    </h1>
+    <p class="back"><a href="/tags/">All tags</a></p>
+    <section>
+      {posts.map((post) => <PostCard post={post} />)}
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .container h1 {
+    font-family: var(--sl-font-family-display);
+    font-size: var(--sl-font-size-2xl);
+    font-weight: var(--sl-font-weight-bold);
+    color: var(--sl-color-ink);
+    margin: var(--sl-space-8) 0 var(--sl-space-2);
+    display: flex;
+    align-items: center;
+    gap: var(--sl-space-2);
+  }
+  .back {
+    margin: 0 0 var(--sl-space-6);
+    font-size: var(--sl-font-size-sm);
+    color: var(--sl-color-muted);
+  }
+</style>
