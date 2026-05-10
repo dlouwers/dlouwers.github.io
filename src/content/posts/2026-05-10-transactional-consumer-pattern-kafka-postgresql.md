@@ -3,6 +3,8 @@ title: Transactional Consumer Pattern with Kafka and PostgreSQL
 date: 2026-05-10
 summary: Co-locating the Kafka offset with business data in a single PostgreSQL transaction gives you exactly-once consumer semantics without a distributed transaction coordinator. A walkthrough in Spring Boot and Kotlin.
 tags: [kafka, postgresql, kotlin, spring-boot, distributed-systems]
+cover: /img/posts/transactional-consumer/cover.png
+coverAlt: Stylised illustration of a distributed system — services and data stores connected by glowing traces.
 ---
 
 If you've ever consumed from Kafka, written to a database, and then wondered what happens when the JVM dies between the two — this post is about the pattern I reach for. It's commonly called the *transactional consumer*: instead of letting Kafka track where you are, you store the offset in your own database, in the same transaction as the business write. Then you only acknowledge the message back to the broker after that transaction commits.
@@ -21,6 +23,23 @@ Both can fail independently. If step 1 succeeds and step 2 crashes, the next con
 The reason this is hard is that Kafka and PostgreSQL don't share a transaction. There is no `COMMIT` you can issue across both.
 
 # The pattern
+
+```d2 Sequence: poll, then both writes inside one PostgreSQL transaction, then commit the offset back to the broker.
+shape: sequence_diagram
+
+broker: Kafka broker
+consumer: Consumer service
+db: PostgreSQL
+
+broker -> consumer: poll() returns records
+
+consumer.txn: atomic DB transaction {
+  consumer.txn -> db: INSERT order
+  consumer.txn -> db: UPSERT kafka_offsets row
+}
+
+consumer -> broker: commitSync(offset + 1)
+```
 
 The trick is to treat the consumer offset as just another row in your database, alongside the business data. A single `BEGIN…COMMIT` covers both writes. The Kafka offset that the broker tracks becomes a hint, not the source of truth — on restart you read the last processed offset from the database and `seek()` the consumer to that position before polling.
 
