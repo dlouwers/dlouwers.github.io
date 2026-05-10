@@ -51,6 +51,31 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
     <meta property="og:url" content={canonicalURL} />
   </head>
   <body>
+    <!-- SVG tritone filter, hidden, available globally. Maps luminance to a
+         brand-coloured palette via three stops:
+           shadows  → tinted-900 #06181a
+           midtones → teal-300   #64a5a6
+           highlights → orange-300 #ffa055
+         Sea / sky / clouds stay cool teal; brightest spots (lantern glow)
+         warm to orange so the brand metaphor reads (safety inside, chaos
+         outside). For any <img class="duotone-teal">. -->
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+      <defs>
+        <filter id="sl-duotone-teal" color-interpolation-filters="sRGB">
+          <feColorMatrix type="matrix" values="
+            0.2126 0.7152 0.0722 0 0
+            0.2126 0.7152 0.0722 0 0
+            0.2126 0.7152 0.0722 0 0
+            0      0      0      1 0"/>
+          <feComponentTransfer>
+            <feFuncR tableValues="0.0235 0.3922 1.0000"/>
+            <feFuncG tableValues="0.0941 0.6471 0.6275"/>
+            <feFuncB tableValues="0.1020 0.6510 0.3333"/>
+          </feComponentTransfer>
+        </filter>
+      </defs>
+    </svg>
+
     <Header />
     <main>
       <slot />

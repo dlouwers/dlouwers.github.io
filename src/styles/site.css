@@ -38,3 +38,45 @@ main {
 
 /* Brand lockup variant switching lives inside Header.astro so its scoped
    rules co-locate with the brand element they target. */
+
+/* Imagery -------------------------------------------------------------- */
+
+/* Duotone treatment: maps any image's luminance to a dark-teal brand
+   palette via the SVG filter defined in BaseLayout. Photographic source
+   images become atmospheric brand chrome rather than generic stock. */
+.duotone-teal {
+  filter: url(#sl-duotone-teal);
+}
+
+/* Hero — full-bleed, fixed aspect, no max-width constraint so it spans
+   beyond the .container width. */
+.hero {
+  width: 100%;
+  aspect-ratio: 8 / 3;
+  background: var(--sl-color-tinted-900);
+  overflow: hidden;
+  border-bottom: 1px solid var(--sl-color-line);
+}
+.hero img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Wave divider — subtle SVG separator, muted colour, used between the
+   home lede and the post feed (and as a small accent on 404). */
+.wave-divider {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: var(--sl-space-8) 0;
+  color: var(--sl-color-line);
+}
+.wave-divider svg {
+  width: 96px;
+  height: auto;
+  display: block;
+}
+.wave-divider--sm svg { width: 64px; }
+
