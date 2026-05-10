@@ -3,11 +3,15 @@ import { defineConfig } from 'astro/config';
 import mdx from '@astrojs/mdx';
 import sitemap from '@astrojs/sitemap';
 import expressiveCode from 'astro-expressive-code';
+import remarkD2 from './plugins/remark-d2.mjs';
 
 export default defineConfig({
   site: 'https://blog.stormlantern.nl',
   output: 'static',
   build: { format: 'directory' },
+  markdown: {
+    remarkPlugins: [[remarkD2, { themeID: 0, darkThemeID: 200 }]],
+  },
   integrations: [
     expressiveCode({
       themes: ['github-light', 'github-dark'],

@@ -11,11 +11,16 @@ interface Props {
   next: CollectionEntry<'posts'> | null;
 }
 const { post, prev, next } = Astro.props;
-const { title, date, summary, tags } = post.data;
+const { title, date, summary, tags, cover, coverAlt } = post.data;
 const dateLabel = date.toISOString().slice(0, 10);
 ---
 <BaseLayout title={title} description={summary}>
   <article class="container post">
+    {cover && (
+      <figure class="post-cover">
+        <img src={cover} alt={coverAlt ?? ''} loading="eager" decoding="async" />
+      </figure>
+    )}
     <header class="post-head">
       <h1>{title}</h1>
       <p class="meta">
@@ -49,6 +54,18 @@ const dateLabel = date.toISOString().slice(0, 10);
 
 <style>
   .post { padding-top: var(--sl-space-8); padding-bottom: var(--sl-space-8); }
+
+  .post-cover {
+    margin: 0 0 var(--sl-space-8);
+  }
+  .post-cover img {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+    border-radius: var(--sl-radius-md);
+  }
 
   .post-head { margin-bottom: var(--sl-space-8); }
   .post-head h1 {
