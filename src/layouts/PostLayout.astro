@@ -92,4 +92,10 @@ const dateLabel = date.toISOString().slice(0, 10);
   .post-nav .prev { grid-column: 1; }
   .post-nav .dir { font-size: var(--sl-font-size-sm); color: var(--sl-color-muted); }
   .post-nav .t { color: var(--sl-color-ink); margin-top: var(--sl-space-1); }
+
+  @media (max-width: 540px) {
+    .post-nav { grid-template-columns: 1fr; }
+    .post-nav .prev,
+    .post-nav .next { grid-column: 1; text-align: left; }
+  }
 </style>
