@@ -39,7 +39,12 @@ jobs:
         run: bun install --frozen-lockfile
 
       - name: Build
-        run: bun run build
+        # `bun run build` hangs in CI when remark plugins use
+        # worker_threads (our remark-d2 plugin loads @terrastruct/d2's
+        # WASM worker). Upstream: withastro/astro#8483 (closed
+        # not-planned) and oven-sh/bun#8816. Run the build via Node so
+        # the worker terminates and the process exits.
+        run: npm run build
 
       - uses: actions/configure-pages@v5
 
