@@ -1,0 +1,23 @@
+direction: down
+
+kc: Keycloak
+kv: Azure Key Vault {
+  shape: cylinder
+}
+svc: Encryption service
+db: "Postgres\nuser_deks" {
+  shape: cylinder
+}
+redis: Redis {
+  shape: cylinder
+}
+kafka: Kafka topics {
+  shape: queue
+}
+
+kc -> svc: "user create / delete events"
+kv -> svc: "fetch KEK\n(startup + rotation)"
+svc <-> db: "read / write encrypted DEK"
+svc <-> redis: "cache plaintext DEK (TTL)"
+svc -> kafka: "produce EncryptedValue"
+kafka -> svc: "consume EncryptedValue"

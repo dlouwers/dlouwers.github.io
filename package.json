@@ -10,7 +10,8 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "render:diagrams": "node scripts/render-diagrams.mjs"
   },
   "dependencies": {
     "@astrojs/mdx": "^5.0.4",

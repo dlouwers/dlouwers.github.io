@@ -43,25 +43,10 @@ Redis caches the *plaintext* DEK with a short TTL, keyed by user ID. That cache 
 
 The read path:
 
-```d2 DEK read path: in-process cache miss falls back to Postgres, unwraps via the in-memory KEK, then backfills Redis for the next call.
-shape: sequence_diagram
-
-svc: Encryption service
-redis: Redis (plaintext DEK cache)
-db: "Postgres user_deks"
-kek: KEK (in-memory)
-
-svc -> redis: GET dek:userId
-redis -> svc: miss
-
-svc -> db: SELECT encrypted_dek WHERE user_id = ?
-db -> svc: encrypted DEK
-
-svc -> kek: unwrap(encrypted DEK)
-kek -> svc: plaintext DEK
-
-svc -> redis: SETEX dek:userId (TTL)
-```
+<figure class="d2-diagram" role="img" aria-label="DEK read path: in-process cache miss falls back to Postgres, unwraps via the in-memory KEK, then backfills Redis for the next call.">
+  <img src="/img/diagrams/kafka-pii-dek-read-path.svg" alt="" />
+  <figcaption>DEK read path: in-process cache miss falls back to Postgres, unwraps via the in-memory KEK, then backfills Redis for the next call.</figcaption>
+</figure>
 
 The write path is the inverse: generate a fresh DEK, wrap it with the KEK in memory, `INSERT` into Postgres, populate Redis. The KEK is consulted once on the wrap; never again until the row is read back from cold storage.
 
@@ -137,31 +122,10 @@ Keep DEKs in Postgres. One key, one delete, done.
 
 # The architecture at a glance
 
-```d2 The encryption service in the middle: Keycloak and Key Vault feed in from above; Postgres and Redis hold DEK state; Kafka carries only EncryptedValue payloads.
-direction: down
-
-kc: Keycloak
-kv: Azure Key Vault {
-  shape: cylinder
-}
-svc: Encryption service
-db: "Postgres\nuser_deks" {
-  shape: cylinder
-}
-redis: Redis {
-  shape: cylinder
-}
-kafka: Kafka topics {
-  shape: queue
-}
-
-kc -> svc: "user create / delete events"
-kv -> svc: "fetch KEK\n(startup + rotation)"
-svc <-> db: "read / write encrypted DEK"
-svc <-> redis: "cache plaintext DEK (TTL)"
-svc -> kafka: "produce EncryptedValue"
-kafka -> svc: "consume EncryptedValue"
-```
+<figure class="d2-diagram" role="img" aria-label="The encryption service in the middle: Keycloak and Key Vault feed in from above; Postgres and Redis hold DEK state; Kafka carries only EncryptedValue payloads.">
+  <img src="/img/diagrams/kafka-pii-architecture.svg" alt="" />
+  <figcaption>The encryption service in the middle: Keycloak and Key Vault feed in from above; Postgres and Redis hold DEK state; Kafka carries only EncryptedValue payloads.</figcaption>
+</figure>
 
 Each peripheral system has a single, bounded responsibility. Keycloak owns identity. Key Vault owns the KEK. Postgres owns DEKs. Redis owns DEK speed. Kafka owns the event log. The Encryption Service is the only component that knows how the pieces fit, and it's the only thing you'd ever rewrite if you swap, say, Keycloak for an OIDC provider or Azure Key Vault for AWS KMS.
 
