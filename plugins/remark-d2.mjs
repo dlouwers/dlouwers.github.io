@@ -35,7 +35,17 @@ export default function remarkD2(options = {}) {
     });
 
     if (targets.length === 0) return;
-    if (!d2Instance) d2Instance = new D2();
+    if (!d2Instance) {
+      d2Instance = new D2();
+      // Let the WASM worker stop keeping the Node event loop alive — without
+      // this, bun in CI hangs at the end of the build because the worker
+      // sits idle on a message channel forever. `await ready` ensures the
+      // worker is created before we touch it.
+      try {
+        await d2Instance.ready;
+        d2Instance.worker?.unref?.();
+      } catch {}
+    }
 
     for (const { node, index, parent } of targets) {
       const cacheKey = `${themeID}|${darkThemeID}|${pad}|${node.value}`;
@@ -49,7 +59,7 @@ export default function remarkD2(options = {}) {
           pad,
           noXMLTag: true,
         });
-        svg = bridgeDarkThemeToDataAttribute(raw);
+        svg = bridgeDarkThemeToDataAttribute(toSvgString(raw));
         cache.set(cacheKey, svg);
       }
 
@@ -63,6 +73,20 @@ export default function remarkD2(options = {}) {
       };
     }
   };
+}
+
+// The d2 render() API is typed as returning a Promise<string>, but in some
+// runtimes (notably bun on the GitHub Actions runner) it comes back as a
+// Uint8Array transferred over the worker message channel. Normalise to a
+// string before any regex work, otherwise the build dies with
+// "svg.match is not a function".
+function toSvgString(value) {
+  if (typeof value === 'string') return value;
+  if (value instanceof Uint8Array) return new TextDecoder('utf-8').decode(value);
+  if (value && typeof value === 'object' && 'svg' in value) {
+    return toSvgString(value.svg);
+  }
+  return String(value ?? '');
 }
 
 // D2's darkThemeID emits dark styles inside @media (prefers-color-scheme: dark).
