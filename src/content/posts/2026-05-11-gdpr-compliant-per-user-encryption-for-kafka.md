@@ -137,8 +137,8 @@ Keep DEKs in Postgres. One key, one delete, done.
 
 # The architecture at a glance
 
-```d2 The encryption service hub: Keycloak feeds identity events in; Key Vault holds the KEK; Postgres + Redis hold DEK state; Kafka carries only EncryptedValue payloads.
-direction: right
+```d2 The encryption service in the middle: Keycloak and Key Vault feed in from above; Postgres and Redis hold DEK state; Kafka carries only EncryptedValue payloads.
+direction: down
 
 kc: Keycloak
 kv: Azure Key Vault {
@@ -156,11 +156,11 @@ kafka: Kafka topics {
 }
 
 kc -> svc: "user create / delete events"
-kv -> svc: "fetch KEK (startup + rotation)"
+kv -> svc: "fetch KEK\n(startup + rotation)"
 svc <-> db: "read / write encrypted DEK"
 svc <-> redis: "cache plaintext DEK (TTL)"
-svc -> kafka: "produce EncryptedValue payloads"
-kafka -> svc: "consume EncryptedValue payloads"
+svc -> kafka: "produce EncryptedValue"
+kafka -> svc: "consume EncryptedValue"
 ```
 
 Each peripheral system has a single, bounded responsibility. Keycloak owns identity. Key Vault owns the KEK. Postgres owns DEKs. Redis owns DEK speed. Kafka owns the event log. The Encryption Service is the only component that knows how the pieces fit, and it's the only thing you'd ever rewrite if you swap, say, Keycloak for an OIDC provider or Azure Key Vault for AWS KMS.
