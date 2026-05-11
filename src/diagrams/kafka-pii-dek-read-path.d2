@@ -1,0 +1,17 @@
+shape: sequence_diagram
+
+svc: Encryption service
+redis: Redis (plaintext DEK cache)
+db: "Postgres user_deks"
+kek: KEK (in-memory)
+
+svc -> redis: GET dek:userId
+redis -> svc: miss
+
+svc -> db: SELECT encrypted_dek WHERE user_id = ?
+db -> svc: encrypted DEK
+
+svc -> kek: unwrap(encrypted DEK)
+kek -> svc: plaintext DEK
+
+svc -> redis: SETEX dek:userId (TTL)

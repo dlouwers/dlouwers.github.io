@@ -1,0 +1,16 @@
+shape: sequence_diagram
+
+broker: Kafka broker
+consumer: Consumer service
+db: PostgreSQL
+
+broker -> consumer: "poll() returns records"
+
+"atomic DB transaction": {
+  consumer -> db: BEGIN
+  consumer -> db: "INSERT order"
+  consumer -> db: "UPSERT kafka_offsets row"
+  consumer -> db: COMMIT
+}
+
+consumer -> broker: "commitSync(offset + 1)"
