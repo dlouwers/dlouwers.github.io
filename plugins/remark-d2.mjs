@@ -35,17 +35,7 @@ export default function remarkD2(options = {}) {
     });
 
     if (targets.length === 0) return;
-    if (!d2Instance) {
-      d2Instance = new D2();
-      // Let the WASM worker stop keeping the Node event loop alive — without
-      // this, bun in CI hangs at the end of the build because the worker
-      // sits idle on a message channel forever. `await ready` ensures the
-      // worker is created before we touch it.
-      try {
-        await d2Instance.ready;
-        d2Instance.worker?.unref?.();
-      } catch {}
-    }
+    if (!d2Instance) d2Instance = new D2();
 
     for (const { node, index, parent } of targets) {
       const cacheKey = `${themeID}|${darkThemeID}|${pad}|${node.value}`;
