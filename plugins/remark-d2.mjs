@@ -4,6 +4,25 @@ import { D2 } from '@terrastruct/d2';
 let d2Instance;
 const cache = new Map();
 
+/**
+ * Terminate the D2 worker. The @terrastruct/d2 package keeps a Node
+ * `worker_threads.Worker` alive after compile/render and exposes no public
+ * cleanup API, which keeps the process alive — locally bun reaps it on exit,
+ * but in CI (GitHub Actions runner + bun) the build step hangs indefinitely.
+ * Call this from an Astro `astro:build:done` integration hook.
+ */
+export async function disposeD2() {
+  if (!d2Instance) return;
+  try {
+    await d2Instance.ready;
+  } catch {}
+  const worker = d2Instance.worker;
+  d2Instance = undefined;
+  if (worker && typeof worker.terminate === 'function') {
+    try { await worker.terminate(); } catch {}
+  }
+}
+
 export default function remarkD2(options = {}) {
   const { themeID = 0, darkThemeID = 200, pad = 20 } = options;
 
