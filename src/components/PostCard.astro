@@ -5,8 +5,11 @@ import TagChip from './TagChip.astro';
 interface Props { post: CollectionEntry<'posts'>; }
 const { post } = Astro.props;
 const { title, date, summary, tags } = post.data;
+// timeZone: 'UTC' because frontmatter dates are UTC midnight — without it the
+// label renders in the build machine's zone and a post dated the 18th shows as
+// the 17th on any negative-offset builder.
 const dateLabel = date.toLocaleDateString('en-US', {
-  year: 'numeric', month: 'long', day: 'numeric'
+  year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC'
 });
 ---
 <article class="post-card">

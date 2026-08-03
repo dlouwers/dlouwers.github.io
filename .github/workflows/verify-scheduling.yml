@@ -1,0 +1,77 @@
+name: Verify scheduled publishing
+
+# Proves the future-date gate in src/lib/posts.ts both ways, using the exact
+# build command deploy.yml runs. Kept out of deploy.yml so the deploy path
+# stays a single build.
+#
+# This guards against the one way the gate can silently fail open: `astro build
+# --mode development` (or a `mode` in astro.config.mjs) makes import.meta.env.DEV
+# true in a production build, which publishes the entire queue at once. The
+# first build below would catch that.
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  gating:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: bun install --frozen-lockfile
+
+      - name: Add a far-future probe post
+        run: |
+          cat > src/content/posts/2099-01-01-scheduling-probe.md <<'EOF'
+          ---
+          title: Scheduling probe
+          date: 2099-01-01
+          summary: Probe post created by CI to verify future-date gating. Never merged.
+          tags: [scheduling-probe]
+          ---
+
+          UNIQUE-PROBE-MARKER-8f3a
+          EOF
+
+      # Same invocation as deploy.yml's build step: no --mode, no BLOG_NOW.
+      - name: Build with the real clock
+        run: npm run build
+
+      - name: Assert the probe is NOT published
+        run: |
+          test ! -e dist/posts/2099-01-01-scheduling-probe/index.html
+          ! grep -rq 'UNIQUE-PROBE-MARKER-8f3a' dist
+          ! grep -q 'scheduling-probe' dist/index.html
+          ! grep -q 'scheduling-probe' dist/rss.xml
+          ! grep -q 'scheduling-probe' dist/sitemap-0.xml
+
+      - name: Rebuild with the clock faked past the probe date
+        env:
+          BLOG_NOW: '2099-06-01T00:00:00Z'
+        run: |
+          rm -rf dist .astro
+          npm run build
+
+      - name: Assert the probe IS published
+        run: |
+          test -e dist/posts/2099-01-01-scheduling-probe/index.html
+          grep -q 'UNIQUE-PROBE-MARKER-8f3a' dist/posts/2099-01-01-scheduling-probe/index.html
+          grep -q 'scheduling-probe' dist/index.html
+          grep -q 'scheduling-probe' dist/rss.xml
+          grep -q 'scheduling-probe' dist/sitemap-0.xml

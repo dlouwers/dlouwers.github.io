@@ -1,10 +1,9 @@
 ---
-import { getCollection } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import PostCard from '../components/PostCard.astro';
+import { getPublishedPosts } from '../lib/posts';
 
-const posts = (await getCollection('posts', ({ data }) => !data.draft))
-  .sort((a, b) => +b.data.date - +a.data.date);
+const posts = await getPublishedPosts();
 
 const heroSrc = '/img/hero.jpg';
 const heroAlt = 'A lantern glow against a stormy sea — Stormlantern.';
