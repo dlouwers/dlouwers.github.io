@@ -1,0 +1,25 @@
+direction: down
+
+n1: "mini-server-01\nmini-PC · 4 vCPU · 15.4 GiB" {
+  cp: "k3s server" {
+    style.bold: true
+  }
+  etcd: "etcd (sole member)" {
+    shape: cylinder
+  }
+  rest: "Flux controllers\nCoreDNS · sealed-secrets"
+}
+
+n3: "mini-server-03\nlaptop · 16 vCPU · 30.8 GiB" {
+  agent: "k3s agent"
+  gpu: "iGPU (Vulkan)"
+  rest: "ingress · notifications\nPrometheus · Alertmanager\ncert-manager"
+}
+
+n1.cp -> n3.agent: "joins"
+
+note: "The control plane runs on the small node.\nThe second machine died in June 2026;\na laptop replaced it." {
+  shape: text
+  near: bottom-center
+  style.italic: true
+}
