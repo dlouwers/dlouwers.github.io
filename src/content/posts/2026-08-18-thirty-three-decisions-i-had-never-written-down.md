@@ -1,19 +1,21 @@
 ---
 title: Thirty-three decisions I had never written down
 date: 2026-08-18
-summary: My homelab has run for two years and change without ever being rebuilt. I sat down and wrote an architecture decision record for every standing decision in it, grounded by querying the live cluster instead of by memory. Four of them falsified each other.
+summary: My homelab has run since early 2024 without ever being rebuilt. I sat down and wrote an architecture decision record for every standing decision in it, grounded by querying the live cluster instead of by memory. Four of them falsified each other.
 tags: [homelab, kubernetes, k3s, architecture, adr]
 ---
 
 *Part 1 of a series on auditing a two-node homelab. [The rest of the series.](/tags/homelab/)*
 
-There is a particular kind of infrastructure that works and that you cannot explain. Not badly built — mine is fine, it has been up for two years and change and it serves real people. But ask me in April why the control plane was on the smaller of the two machines, and the honest answer was "because that's where it ended up". Ask why the cluster ran the ingress controller it ran, and the answer was "because the distribution ships it". Neither of those is a decision. They are outcomes wearing a decision's clothes, and after a while you stop being able to tell which of your choices were choices.
+There is a particular kind of infrastructure that works and that you cannot explain. Not badly built — mine is fine, it has been up since early 2024 and it serves real people. But ask me in April why the control plane was on the smaller of the two machines, and the honest answer was "because that's where it ended up". Ask why the cluster ran the ingress controller it ran, and the answer was "because the distribution ships it". Neither of those is a decision. They are outcomes wearing a decision's clothes, and after a while you stop being able to tell which of your choices were choices.
 
 So I wrote them all down. Thirty-three architecture decision records in one sitting, one per standing decision, and — this is the part that mattered — each one grounded by reading the repository and querying the live cluster rather than by remembering. This post is about what that turned up, which was not what I expected. The rest of the series is the individual findings.
 
 # The cluster nobody designed
 
-The repository is called `experiments`. That is a fossil. It started in January 2024 as a scratch place for workstation bootstrapping notes, grew an Advent of Code project in Rust, and acquired a Kubernetes cluster in April 2026 for an entirely mechanical reason: push-based CI could not reach an API server on my LAN, and a repository already existed. Nobody decided to put a cluster in a repo named `experiments`. It is also not moving, because renaming it breaks the GitOps bootstrap URL and the app installations that point at it — a bad name is cheaper than a migration.
+The repository is called `experiments`, and that name was accurate when it was chosen. It was where I did homelab and discovery work — the place for trying things — and the first Kubernetes manifests I ever deployed, the CRDs for a game server, went in it because that is exactly what it was for. When the cluster configuration followed them in, it was not a mismatch. It was the same activity.
+
+What nobody decided is what the repository became. A place for trying things is now the source of truth for a cluster that other people depend on: friends whose game worlds live there, strangers hitting a public relay, applications with their own users. Nothing renamed it, because nothing had to — and renaming it now would break the GitOps bootstrap URL and every app installation pointing at it, so it will keep the name. But `experiments` describes an intent, not a status, and the two stopped matching at some point that nothing in the repository records.
 
 The distribution has the same shape. The cluster runs k3s, and the issue that started the GitOps migration opens with the phrase "bootstrap Flux on the **existing** k3s cluster". The distribution is a premise in that sentence, not a topic. When I went looking for the oldest datable artefact, I found a `kubectl get storageclass` from a debugging session that reported the bundled storage class with an age of `2y70d` — putting the install somewhere around March 2024, two years before any of the work I was documenting. There is no issue, no commit and no comment anywhere recording that an alternative was ever considered.
 
