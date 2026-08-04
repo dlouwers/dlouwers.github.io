@@ -4,6 +4,24 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+  schedule:
+    # Publish window for future-dated posts. Frontmatter dates coerce to
+    # 00:00 UTC (js-yaml parses a bare YYYY-MM-DD as a UTC Date before Zod
+    # sees it), so a post dated 2026-08-18 goes live on that day's 04:37 UTC
+    # run — 06:37 CEST. See src/lib/posts.ts for the gate itself.
+    #
+    # Twice daily: GitHub drops scheduled runs under load and never retries
+    # them, so the afternoon run self-heals a missed morning. Off-the-hour
+    # minutes because schedules at :00 are the most contended.
+    #
+    # HAZARD: GitHub disables `schedule:` triggers in a repository that sees
+    # no activity for 60 days, and a queue of posts merged in one batch is
+    # exactly that kind of quiet. Keep a publishing queue shorter than ~50
+    # days from its merge, or merge it in two batches. GitHub emails the
+    # repository owner before disabling, so this fails loudly rather than
+    # silently — but it does fail.
+    - cron: '37 4 * * *'
+    - cron: '37 12 * * *'
 
 permissions:
   contents: read
