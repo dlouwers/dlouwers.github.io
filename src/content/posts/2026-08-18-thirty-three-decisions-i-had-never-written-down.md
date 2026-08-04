@@ -1,7 +1,7 @@
 ---
 title: Thirty-three decisions I had never written down
 date: 2026-08-18
-summary: My homelab has run since early 2024 without ever being rebuilt. I sat down and wrote an architecture decision record for every standing decision in it, grounded by querying the live cluster instead of by memory. Four of them falsified each other.
+summary: My homelab has run since early 2024 without ever being rebuilt. I wrote an architecture decision record for every standing decision in it, each grounded by querying the live cluster rather than by memory. They corrected each other, and the most useful one turned out to be wrong.
 tags: [homelab, kubernetes, k3s, architecture, adr]
 ---
 
@@ -36,7 +36,11 @@ The laptop brings its own texture. It needs an out-of-tree driver built by DKMS 
 
 # Writing it down changed what I knew
 
-Here is the part I did not anticipate. Several of these documents falsified each other, and one falsified itself.
+Here is the part I did not anticipate. Because I wrote them in parallel and checked each one against the live cluster, several of them corrected each other — not each other's *decisions*, but the facts those decisions were resting on. One found that another's object counts were stale. One corrected a memory-headroom figure that a third had already built an argument on top of. One caught a fourth citing a threshold whose justification had been deleted months earlier.
+
+That is a strange and slightly unsettling thing to discover about your own documentation. Every one of those numbers had felt like a fact when I wrote it. What made them checkable was that they were written as measurements — a value, and where it came from — rather than as recollections.
+
+The best of them is worth walking through, because it is the one where the mechanism is clearest.
 
 That distribution ADR — the one whose options section exists to admit there were no options — also had to state what the cluster keeps its state in. I reasoned from absence: the server config carries neither `--cluster-init` nor `--datastore-endpoint`, so it must be on the default embedded SQLite. That is a reasonable inference. I labelled it as an inference, and — because a claim you cannot check is not worth writing — I put the falsifying command in the same paragraph:
 
@@ -45,11 +49,17 @@ kubectl get node mini-server-01 -o jsonpath='{.metadata.labels}' | tr ',' '\n' |
 kubectl get etcdsnapshotfile.k3s.cattle.io
 ```
 
-The first returned `node-role.kubernetes.io/etcd=true`. The second returned six snapshot objects, twelve hours apart, growing from 56 MB to 84 MB. The cluster is on embedded etcd as a single member, and has been all along.
+Then, a few documents later, I was writing about whether to add a third node — and that argument turns on the datastore, because adding a control-plane member to etcd is a *join* while migrating off SQLite is a project. So I ran the command. The first line returned `node-role.kubernetes.io/etcd=true`. The second returned six snapshot objects, twelve hours apart, growing from 56 MB to 84 MB.
 
-This is good news twice over. Practically, it means adding a control-plane node is a *join* rather than a datastore migration, which is materially cheaper than the ADR I was in the middle of writing had assumed — a different document found this and corrected the first one. But the more useful outcome is the shape of the thing: an inference, labelled as an inference, shipped alongside the command that disproved it, inside a document that is now kept with the wrong turn intact rather than quietly rewritten.
+The cluster has been on embedded etcd as a single member the whole time. My inference was wrong, and it was wrong in the cluster's favour: the expensive option I had been pricing was much cheaper than I thought.
 
-Deleting that paragraph would have made the record tidier and taught the next reader nothing.
+Now, the obvious question, and one I had to answer for myself at the time. Nothing was stopping me from going back and fixing it. The document was hours old, I was still writing the set, and none of it was load-bearing yet. Editing one paragraph would have cost thirty seconds and left a tidier record.
+
+I didn't, and the reason is the whole method in one line: the wrong inference is the only proof I have that the method works.
+
+Read the corrected version alone and you see a document that was simply right about its datastore, which tells you nothing — most documents claim to be right. Read it with the correction in place and you see something you can actually copy: a claim that was labelled as an inference rather than asserted as fact, shipped next to the command that would settle it, and then settled the other way. That is a demonstration that writing things down this way is self-correcting. Editing it out deletes the demonstration and keeps only the answer.
+
+So the paragraph stays, in the past tense, with the correction attached underneath and a note saying which later document found it. It is the single most useful thing in thirty-three files, and it is the part that was wrong.
 
 # Some decisions were never decided
 
