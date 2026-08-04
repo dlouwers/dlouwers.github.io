@@ -19,7 +19,7 @@ What nobody decided is what the repository became. A place for trying things is 
 
 The distribution has the same shape. The cluster runs k3s, and the issue that started the GitOps migration opens with the phrase "bootstrap Flux on the **existing** k3s cluster". The distribution is a premise in that sentence, not a topic. When I went looking for the oldest datable artefact, I found a `kubectl get storageclass` from a debugging session that reported the bundled storage class with an age of `2y70d` — putting the install somewhere around March 2024, two years before any of the work I was documenting. There is no issue, no commit and no comment anywhere recording that an alternative was ever considered.
 
-The ADR for that one is short and says so. It has an options section that exists mainly to admit it is retrospective: here is what a replacement would have to beat *now*, since nothing was weighed *then*. Writing "no alternative was seriously evaluated" in a document is uncomfortable in a way that is entirely the point.
+So one of the thirty-three is an ADR about the distribution, and it is short, and it says all of that outright. Its options section exists mainly to admit that it is retrospective: here is what a replacement would have to beat *now*, since nothing was weighed *then*. Writing "no alternative was seriously evaluated" into a document is uncomfortable in a way that is entirely the point. Hold on to that one — it comes back.
 
 # Two nodes that do not match
 
@@ -38,7 +38,7 @@ The laptop brings its own texture. It needs an out-of-tree driver built by DKMS 
 
 Here is the part I did not anticipate. Several of these documents falsified each other, and one falsified itself.
 
-The distribution ADR needed to say what the datastore was. I reasoned from absence: the server config carries neither `--cluster-init` nor `--datastore-endpoint`, so it must be on the default embedded SQLite. That is a reasonable inference. I labelled it as an inference, and — because a claim you cannot check is not worth writing — I put the falsifying command in the same paragraph:
+That distribution ADR — the one whose options section exists to admit there were no options — also had to state what the cluster keeps its state in. I reasoned from absence: the server config carries neither `--cluster-init` nor `--datastore-endpoint`, so it must be on the default embedded SQLite. That is a reasonable inference. I labelled it as an inference, and — because a claim you cannot check is not worth writing — I put the falsifying command in the same paragraph:
 
 ```sh
 kubectl get node mini-server-01 -o jsonpath='{.metadata.labels}' | tr ',' '\n' | grep etcd
