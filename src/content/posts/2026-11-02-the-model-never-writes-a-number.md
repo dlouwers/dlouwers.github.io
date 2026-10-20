@@ -141,6 +141,22 @@ The same shape turned up once more, smaller. The model reasoned about idle cash 
 
 That one is only partly fixed. A deposit or a withdrawal still changes the total value, and at portfolio level I still cannot tell it apart from the market moving. When a holding changed size, the summary now says that part of the change was trading. A deposit with nothing traded would still read as a gain. I know where the data for that is, and I have not done it yet.
 
+# Numbers in a style of their own
+
+Around the same time, the dashboard learned to write amounts the way I do: a point between thousands, a comma before the cents. The summary shown right next to it did not. The dashboard said `52.418,37` and the paragraph beside it said `52418.37 EUR`.
+
+That was not even one consistent style. The model re-typed every figure it was given, in whatever notation it picked that day. One evening it wrote `52,418.37 EUR` and "0.35 percent". The next it wrote `52201.90 EUR`, and a few days later "0.12%". Dutch notation never came up, because nothing told it which notation I read.
+
+The style was the visible part. The worse part was that some figures were never in the prompt at all. The headline percentage, and each holding's share of the portfolio, were left to the model to work out, and it worked them out in prose. Twice it described a holding of just under half the portfolio as "more than half". Nobody checks "more than half" against a calculator. It reads like a fact.
+
+The obvious fix is one more line in the prompt: write numbers the Dutch way. I did not add it, for three reasons.
+
+- **The model would still be doing the arithmetic.** A wrong share written with the right separators is still wrong.
+- **The text would be tied to one notation.** A summary is written once, stored, and shown again later. Change the setting, and every summary written before the change keeps the old notation.
+- **Nothing could check it.** A test can assert what code returns. It cannot assert which notation a model will choose tomorrow.
+
+This was the sale-as-a-crash problem again, in a smaller form. The model had been given two jobs, choosing the words and handling the numbers, and it was good at only one of them. The previous fix moved the arithmetic out of the prompt. The next step was to move the numbers out of the reply.
+
 <!--
 OUTLINE — part 1 (journey: what was tried, what failed, what replaced it)
 
