@@ -19,6 +19,9 @@ PROSE RULES (remove before merge)
   no account details from the real portfolio.
 - For each fix: what it proves, and what happens when it fails.
 - Vendor-neutral: Gemini named once, next to equivalents.
+- The author is the app's only user. No customers, users or testers;
+  "the reader" of a summary is the author. Per-locale rendering is about
+  what the design allows, not about an audience it has.
 -->
 
 # A summary that read well
@@ -27,7 +30,7 @@ I have a small app that watches my brokerage account. Every few minutes it recor
 
 The first summaries were a pleasure to read. Calm, specific, in the tone of a newsletter written for one reader. They were also wrong, in several different ways, and I could not tell by reading them. One of them described a holding I had partly sold as having crashed.
 
-This post is about how that got fixed, in the order things broke. Each fix took a job away from the model and gave it to code, until the model was left with one: choosing the words. It no longer writes a single number. Code works out every figure, and formats it for whoever is reading, in their own notation. A second part, out on DRAFT-DATE, is about running those prompts once they are in production.
+This post is about how that got fixed, in the order things broke. Each fix took a job away from the model and gave it to code, until the model was left with one: choosing the words. It no longer writes a single number. Code works out every figure, and formats it the way the reader writes numbers. So far that reader is me, and I write them the Dutch way. A second part, out on DRAFT-DATE, is about running those prompts once they are in production.
 
 # Version one: hand it the data and ask nicely
 
