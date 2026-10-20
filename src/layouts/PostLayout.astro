@@ -14,7 +14,7 @@ const { post, prev, next } = Astro.props;
 const { title, date, summary, tags, cover, coverAlt } = post.data;
 const dateLabel = date.toISOString().slice(0, 10);
 ---
-<BaseLayout title={title} description={summary}>
+<BaseLayout title={title} description={summary} image={cover} imageAlt={coverAlt} type="article">
   <article class="container post">
     {cover && (
       <figure class="post-cover">

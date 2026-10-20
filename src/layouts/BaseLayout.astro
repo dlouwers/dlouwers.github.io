@@ -8,14 +8,23 @@ import Footer from '../components/Footer.astro';
 interface Props {
   title?: string;
   description?: string;
+  /** Site-relative path of the link-preview image; a post passes its cover. */
+  image?: string;
+  imageAlt?: string;
+  type?: 'website' | 'article';
 }
 
 const {
   title = 'Dirk Louwers',
   description = 'Notes on software, systems, and finance tooling.',
+  image = '/img/hero.jpg',
+  imageAlt,
+  type = 'website',
 } = Astro.props;
 
 const canonicalURL = new URL(Astro.url.pathname, Astro.site);
+// Link previews (Slack, LinkedIn, Mastodon) only accept an absolute URL.
+const imageURL = new URL(image, Astro.site);
 ---
 <!doctype html>
 <html lang="en">
@@ -45,10 +54,13 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
     <link rel="alternate" type="application/rss+xml" title={title} href="/rss.xml" />
     <link rel="sitemap" href="/sitemap-index.xml" />
 
-    <meta property="og:type" content="website" />
+    <meta property="og:type" content={type} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonicalURL} />
+    <meta property="og:image" content={imageURL} />
+    {imageAlt && <meta property="og:image:alt" content={imageAlt} />}
+    <meta name="twitter:card" content="summary_large_image" />
   </head>
   <body>
     <!-- SVG tritone filter, hidden, available globally. Maps luminance to a
