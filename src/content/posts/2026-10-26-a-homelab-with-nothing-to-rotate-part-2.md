@@ -109,9 +109,23 @@ That last part is the same lesson as with the image pulls. A rule that lets the 
 
 # The one key I kept
 
-- The honest limit: to change something *on GitHub* — here, publishing a new version of my Homebrew package to another repository — GitHub still wants one of its own credentials. It accepts no federated badge for that.
-- What I did instead of a stored key: the key exists only inside the cloud provider's key management service, where it can sign but can never be read out, and only the release workflow, on a release tag, can ask it to sign. It is federation with a key-shaped last step.
-- One sentence on the alternative I designed and parked (the package repository pulling verified releases itself), and why it only becomes better with an organisation account.
+There is one thing a badge cannot do here: change something on GitHub itself.
+
+I publish a small command-line tool through Homebrew, the package manager many people use on macOS. Homebrew finds packages in a *tap*, which is just a git repository holding a short description of each package: where to download it, and the checksum it must have. So every release of the tool has to end with a commit to a second repository, the tap. And GitHub does not accept federated tokens for its own API. A workflow can prove who it is to every cloud there is, but to push to another repository it needs one of GitHub's own credentials: a personal access token, a deploy key, or a GitHub App's private key. All three are something stored. The only credential that is not, the token GitHub gives each workflow run, works for the repository the run belongs to and nowhere else.
+
+So the key stays. What I could change is where it lives and who can use it.
+
+A GitHub App authenticates by signing a short statement with its private key, which GitHub then trades for an hour of access to the repositories the App is installed on. The signing is the only thing the key is ever used for. That means the key does not have to be anywhere a program can read it. It only has to be somewhere a program can ask for a signature.
+
+Every cloud has a key management service for exactly that: it holds a private key, signs with it on request, and never hands it out. GitHub generates an App's keys itself and hands you the private half once, as a file. I imported that into the key management service as a key that cannot be exported, and deleted the file. That was the only moment anyone held the key, and from then on it exists in one place, where nobody can read it, me included.
+
+Permission to ask for a signature goes through the same federation as everything else. The release workflow presents its GitHub token, and the trust rule admits it only in the tool's repository by number, only for a version tag, and only from the release workflow file. The one other way in is a small test workflow that I start by hand on the main branch, to check that signing still works without making a release. That run gets permission to sign, signs, receives an hour of access to the tap, and pushes the update. Everything up to the last step is a badge. It is federation with a key-shaped last step.
+
+There was one more reason to keep it. The tap is protected like any other repository: changes go through a pull request. The App is the single exemption to that rule, and on a personal account it is the only kind of exemption that comes without a readable secret. GitHub will not let its own CI token be exempted there, the same limit as with Flux's version commits. Keeping the App keeps the pull request rule, and leaves room to require a second reviewer one day.
+
+Rotating it is still possible: have GitHub generate a new key for the App, import it as a new version, switch over, then delete the old one. But nothing forces it any more. A key that cannot be copied cannot leak through a log or a backup, and the reason rotation schedules exist was that kind of leak.
+
+I also designed the alternative, and put it on the shelf. The release could attach the package description to the release itself, with a signed record of which workflow built it. The tap would then fetch new releases on a schedule, verify that record, and commit with its own CI token. No App, no key at all. It only works if that token can be exempted from the pull request rule, though, and that is possible for repositories owned by an organisation, not by a personal account. If the tap ever moves to an organisation, the last key goes.
 
 # When the cloud is down
 
