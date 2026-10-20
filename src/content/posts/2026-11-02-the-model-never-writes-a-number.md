@@ -3,6 +3,8 @@ title: "The model never writes a number, part 1: harnessing and localising LLM o
 date: 2026-11-02
 summary: "DRAFT — I let an LLM write a daily summary of my investment portfolio. It read well and was wrong in five different ways. The fix: code decides the facts and how they are formatted, the model decides only the words."
 tags: [llm, go, localisation]
+cover: /img/posts/model-never-writes-a-number/cover.png
+coverAlt: "Isometric illustration on a dark navy grid. On the left, a machine with brass gears behind glass takes in a stack of dark blocks and sets out a row of glowing teal tiles. In the centre, a glowing orb shines a beam onto an unrolled scroll of wavy lines with empty slots outlined in orange. On the right, a phone and a monitor show the same kind of page with teal tiles in the slots."
 draft: false
 ---
 
