@@ -3,6 +3,8 @@ title: A homelab with nothing to rotate
 date: 2026-10-19
 summary: My home Kubernetes cluster used to run on long-lived keys, copied into more places than I could list. Now the systems involved prove who they are to each other with short-lived tokens, and there is almost nothing left to rotate.
 tags: [homelab, kubernetes, k3s, security, workload-identity]
+cover: /img/posts/homelab-nothing-to-rotate/cover.png
+coverAlt: Isometric illustration of an archway of shipping containers. A glowing teal seedling is checked at the gateway and blooms inside it, while a ring of old keys beside it fades into particles. A light trace leads on to a server carrying container blocks.
 draft: false
 ---
 
