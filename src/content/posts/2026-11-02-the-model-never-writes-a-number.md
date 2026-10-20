@@ -103,6 +103,44 @@ That one never reached a summary, by luck: the prompt only used each position's 
 
 What I took from this: the model trusts your zeros more than you do. Every value in a prompt is a claim, and the place to decide whether you know something is where the data comes in, not where the prompt is written.
 
+# A sale reported as a crash
+
+One day I sold three quarters of a holding. That evening's summary listed it as the day's biggest loser: its value had dropped by three quarters. The price had moved a fraction of a percent. The dashboard's daily-change column said the same thing.
+
+Go back to the first prompt. Today's lines carried a quantity, yesterday's only a value. With that input, a sale and a price fall are literally the same thing: a smaller number than yesterday. The model was not hallucinating. It was asked a question its data could not answer, and it answered the most likely version of it. The dashboard had the same bug for the same reason, which makes it hard to blame the model.
+
+The obvious fix was to add the quantity to yesterday's lines as well. I nearly did. But that would still leave the model to work out, from raw figures, which part of a change was the market and which part was me. It might do that right most days. I wanted it right every day, and I wanted to be able to test it.
+
+So the movement is now worked out in code, before the prompt is written:
+
+```go
+// Market move: the quantity held now, revalued by the price move.
+// A sale changes what is held, not what a share did, so this stays
+// honest across a partial sale.
+move := (now.Price - before.Price) * now.Quantity * fxToBase
+```
+
+The change in value is kept as a separate figure, and holdings are ranked by market move only, never by value change. A holding that appeared or disappeared gets an explicit entry instead of a comparison with nothing. And the ranking happens in one currency. Until then, a move in dollars and a move in euros had been compared as plain numbers.
+
+The model now gets a result to describe instead of a puzzle to solve. A holding I partly sold arrives roughly like this (invented numbers):
+
+```text
+- ACME: market move down 9.40 EUR. POSITION SIZE CHANGED: sold 90 units.
+  This is a purchase or sale, NOT a market movement. Its total value
+  fell by 7,412.10 EUR, but only the market move reflects what the
+  investment itself did.
+- WIDGET: CLOSED this period. The entire holding of 40 units was
+  disposed of. This is not a loss and its value did not fall to zero.
+```
+
+The capital letters are not elegant, and they work. A sale is described as a sale.
+
+Moving the arithmetic into code paid off right away, because code can be tested and a prompt cannot. "A partial sale is not a price move" became a unit test on real snapshot data. Working out the movement also turned up something no amount of reading summaries had: every price change was exactly zero. The summary ran at eight in the morning, before any market opened, so "today's" price was yesterday's closing price, already stored the night before. Since the first day, the "biggest movers" paragraph had been describing running totals of gains and losses since purchase, and calling them the day's movement. It read fine.
+
+The same shape turned up once more, smaller. The model reasoned about idle cash from two numbers: the total value and the value of the positions. After a sale those do not add up: the proceeds of a trade that has not settled yet sit in neither. It reported cash as a small share of the portfolio while the money from the sale was not counted anywhere. Now code works out that unsettled amount and states it. The prompt says to take cash only from the cash balance, and to say so in one clause when a trade is still settling. When everything has settled, the unsettled amount comes out near zero, which is its own check.
+
+That one is only partly fixed. A deposit or a withdrawal still changes the total value, and at portfolio level I still cannot tell it apart from the market moving. When a holding changed size, the summary now says that part of the change was trading. A deposit with nothing traded would still read as a gain. I know where the data for that is, and I have not done it yet.
+
 <!--
 OUTLINE — part 1 (journey: what was tried, what failed, what replaced it)
 
