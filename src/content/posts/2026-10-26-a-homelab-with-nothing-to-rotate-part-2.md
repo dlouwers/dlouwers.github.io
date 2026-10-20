@@ -129,10 +129,29 @@ I also designed the alternative, and put it on the shelf. The release could atta
 
 # When the cloud is down
 
-- What keeps working: everything that is already running; Flux keeps applying the last configuration it fetched.
-- What stops: anything new reaching the cluster.
-- The escape hatch: apply the configuration from a local checkout, then hand control back to Flux once the registry is reachable. Rehearsed, not theoretical: a cold restart of the component that fetches artifacts recovered in about five minutes.
-- Rebuilding the cluster from scratch has one step outside it: telling the cloud provider to trust the new cluster's signing key.
+Part one listed the cloud as a dependency. This is what that means in practice, because "the cluster depends on the cloud" sounds worse than it is, and in one place it is worse than it sounds.
+
+If the registry or the token exchange is unreachable, nothing that is already running notices. Pods keep running, and the kubelet only needs the registry to fetch an image it does not have. A pod that restarts on a node that still holds its image starts as before. Credentials the kubelet already has stay valid until they expire, close to an hour, so a short outage passes without a trace. What fails is a pod that needs an image the node has never pulled: a new version, or a pod moved to another node. It waits, retrying, until the registry is back.
+
+Flux keeps working too, but only with what it already has. The controller that applies configuration keeps applying the last artifact it fetched, every few minutes, as it always does. Nothing new arrives, so a merge in that time is not deployed until the registry is reachable again.
+
+That re-applying is also why the obvious fix does not work. If you need to change something during an outage, say a broken setting that has to be reverted now, `kubectl apply` of the fix lasts until Flux's next pass, which puts the old artifact back. So the escape hatch has to switch Flux off for that part of the cluster first, apply from a checkout of the repository, and hand control back once the registry is reachable:
+
+```sh
+flux suspend kustomization <name>
+flux build kustomization <name> --path ./<its path> > built.yaml
+kubectl apply --server-side --field-manager=kustomize-controller -f built.yaml
+# later, once the registry is back:
+flux resume kustomization <name>
+```
+
+`flux build` matters here. It renders the files from the checkout the way Flux would, with the settings Flux adds on top, such as a target namespace, so what you apply is what Flux would have applied. Applying it under Flux's own field manager means Flux takes the objects back over cleanly when it resumes, and resuming makes the registry the source of truth again.
+
+One trap is particular to the version trick from earlier. For applications whose image versions live only in the artifact, a checkout from git has old versions in it, and applying it would quietly roll those applications back. The last artifact's versions are still known inside the cluster, in the status Flux keeps about its source, so my script copies them into the checkout before building. Without that step, the escape hatch is a rollback.
+
+I have rehearsed both halves. The script applied one part of the cluster from a checkout, with Flux suspended, and handed it back without a change. And the controller that fetches artifacts keeps them in temporary storage, so a restart throws them all away and fetches everything again. Restarted on purpose, it had every source back in about five minutes. That rehearsal ran with the cloud reachable, and it shows the one place where an outage is worse than it sounds: if that controller restarts while the registry is down, it starts empty. The cluster keeps running what it has, but Flux has nothing to apply until the registry returns, and the escape hatch above is the only way to change anything.
+
+Rebuilding the cluster from scratch has one step outside it. A new cluster has a new signing key, so the cloud has to be told to trust that key before Flux can fetch anything, the same planned step as replacing the key on the existing cluster. It is written down next to the bootstrap steps. I have run them against the live cluster without applying anything, but not yet on a new one, so that is the part of this I would test before I needed it.
 
 # Wrapping up
 
