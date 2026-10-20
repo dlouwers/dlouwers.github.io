@@ -5,13 +5,15 @@ summary: "Part two of replacing every stored credential in my home cluster. Flux
 tags: [homelab, kubernetes, k3s, security, workload-identity]
 cover: /img/posts/homelab-nothing-to-rotate/cover-part-2.png
 coverAlt: "Isometric illustration: a sealed parcel travels from a branching version tree through a container registry to a small server cluster. In the foreground, a single brass key stays locked inside a glowing glass cube; only a coral wax seal leaves it, drifting towards the servers."
-draft: true
+draft: false
 ---
 
 <!--
 Part two. The outline rules and the sources for vendor claims are in the
 comment at the top of part one; they apply here too. The date is a
-placeholder for publication, a week after part one.
+placeholder for publication, a week after part one. draft is false so astro dev
+shows it; the date gate keeps it off the live site until then, but only if
+nothing merges before it is finished.
 -->
 
 [Part one](/posts/2026-10-19-a-homelab-with-nothing-to-rotate/) replaced stored keys with badges. A workload, such as a CI run on GitHub or a pod in the cluster, asks whoever runs it for a short-lived signed token that says who it is. A cloud provider has been told which tokens to trust, under which conditions, and trades a matching one for an hour of access. With that, CI pushes images to a cloud registry and the cluster pulls them as the pod that needs them, with nothing stored anywhere.
