@@ -84,19 +84,22 @@ One boundary before going on. This is about how machines prove who they are to e
 
 # The idea: prove who you are, don't hold a key
 
-One idea, explained well enough that the rest of the post is just examples.
+Think of the difference between a key and a badge. A key opens the door for anyone holding a copy, and you cannot know how many copies exist. A badge is checked at the door every time. It says who you are, it was issued by someone the door already trusts, and it is only good for today. Lose it, and by tomorrow it is worthless to whoever found it.
+
+Every credential on my list was a key. The idea behind replacing them is that most of the systems involved can already get a badge, without anyone having to store anything.
+
+GitHub Actions is one of them. A workflow run can ask GitHub for a token that says, in effect, "this is the workflow in this file, in this repository, running for this branch", signed by GitHub. The format is OpenID Connect, usually shortened to OIDC: a standard way of writing down who someone is, so that anyone with the issuer's public key can check the signature. The token is valid for minutes, and nobody creates it in advance. The run asks for one when it needs it.
+
+A Kubernetes cluster is the other. Every pod runs as a ServiceAccount, and the cluster already gives each pod a signed token that says "this is ServiceAccount S in namespace N". Kubernetes mostly uses these internally, but they are OIDC tokens as well, and the cluster publishes the public keys needed to check them. A pod can also get one addressed to a specific outside party, its *audience*, and those are short-lived: an hour or less, renewed as they age.
+
+Neither badge opens anything by itself. The missing piece is a door that accepts them, and that is what workload identity federation is. You tell a cloud provider: accept tokens signed by GitHub, but only from this repository, this branch and this workflow file. Or: accept tokens signed by my cluster, but only for this ServiceAccount. A workload presents its token, the provider checks the signature and the conditions, and hands back a credential of its own that lasts about an hour. AWS, Azure and Google all offer this, under different names.
 
 <figure class="d2-diagram" role="img" aria-label="DRAFT: A CI workflow on GitHub, Flux in the cluster and an app pod in the cluster each present a signed statement of who they are to a token exchange at a cloud provider. The workflow's is signed by GitHub, the other two by the cluster. The exchange grants an hour of access to the registry.">
   <img src="/img/diagrams/secret-free-overview.svg" alt="" />
   <figcaption>DRAFT: Nobody holds a key. Everything that needs access proves who it is, and gets an hour.</figcaption>
 </figure>
 
-- The analogy: a key you copy versus a badge checked at the door. Anyone with a copy of the key gets in. A badge is issued for today, to you, by someone the door already trusts.
-- The two things you already have that can issue such a badge, without you storing anything:
-  - GitHub Actions can give every workflow run a signed token that says "this is workflow X in repository Y, running for branch Z" (introduce: OIDC token, in one sentence — a standard format for "who I am", signed by the issuer);
-  - every Kubernetes cluster already signs tokens for its ServiceAccounts ("this pod runs as ServiceAccount S in namespace N"), and publishes the public keys to check them.
-- The third piece is something that accepts those badges and swaps them for real access. Introduce workload identity federation as exactly that: you tell a cloud provider "trust tokens signed by GitHub, but only for this repository and this workflow", and it exchanges a matching token for a short-lived credential. All three large clouds offer it, under slightly different names.
-- What the reader should take away: nothing long-lived is stored anywhere; access lasts about an hour; and the rule for who gets in is a readable condition, not a list of who holds a copy.
+Three things change when access works this way. Nothing long-lived is stored anywhere, so there is nothing to copy, and nothing that is still useful to anyone next week. Access runs out by itself, so taking it away means changing a rule, not hunting down copies. And the question "who can get in?" has an answer you can read: a short condition, kept with the rest of the configuration, instead of a list of everyone who might once have been handed the key.
 
 # Choosing a registry that accepts the badge
 
