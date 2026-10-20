@@ -103,15 +103,23 @@ Three things change when access works this way. Nothing long-lived is stored any
 
 # Choosing a registry that accepts the badge
 
-- The deciding fact: the reader's obvious choice, GitHub's own container registry, cannot do this. Pulling a private image from it needs a token. What I needed was a registry that accepts federated badges from both GitHub and my cluster.
-- The large clouds' registries do: AWS's ECR, Azure's ACR, Google's Artifact Registry. All three clouds federate with GitHub Actions and with Kubernetes clusters running anywhere.
-- One difference matters for a cluster at home, so give it a paragraph: to check the cluster's tokens, the cloud needs the cluster's public signing keys. AWS and Azure fetch them from the cluster's issuer URL, which must be reachable over public HTTPS — so a cluster behind a home router has to publish its discovery document and keys somewhere public (a static site will do) and use that URL as its issuer. Google also lets you upload the keys directly, which is why I used Google: nothing about the cluster had to become public. Everything else below works the same on all three, with different names for the pieces.
-- So one place, one trust mechanism, for every direction: CI pushes, the cluster pulls.
-- Alternatives considered, a sentence each: running my own registry (the credential problem just moves inside the cluster), keeping GitHub's registry with a token (the thing I was trying to remove).
-- What it costs, before the reader asks:
-  - a dependency on the cloud provider being up (last section);
-  - real money is possible, so a budget alert — and the surprising detail that it is only an alert: on a normal pay-as-you-go account none of the three caps spending for you. Google documents a do-it-yourself way to switch billing off when a budget is hit (which shuts down everything in the project, every image pull included); AWS can run actions when a budget is crossed, such as applying a restrictive policy; Azure's spending limit exists only on free and credit-based subscriptions;
-  - the cluster's signing key becomes something the cloud trusts, so replacing it becomes a planned step.
+All of this only helps if the thing you are trying to reach accepts a badge, and the obvious place for a GitHub user's container images does not. GitHub's own registry has no federation for anyone outside GitHub Actions: a cluster that wants to pull a private image from it needs a personal access token, and that was the first key on my list. So the images had to live somewhere else, somewhere that would accept a token from GitHub when CI pushes and a token from my cluster when it pulls.
+
+The registries of the three large clouds all qualify. Amazon's is ECR, Azure's is ACR, and Google's is Artifact Registry, and each sits behind a provider that federates with GitHub Actions and with Kubernetes clusters running anywhere, not only their own.
+
+One difference between them matters a great deal for a cluster at home. To check the cluster's tokens, the cloud needs the cluster's public signing keys. AWS and Azure fetch those themselves, from an address the cluster names as its issuer, and that address has to be reachable over public HTTPS. A cluster behind a home router is not, so on those two you publish the cluster's keys somewhere public, a static website will do, and configure the cluster to name that site as its issuer. Google also lets you upload the keys instead. That is why I chose Google: nothing about the cluster had to become reachable from the internet. Past that point the three work the same way, with different names for the pieces, and the rest of this post applies to all of them.
+
+It also gave me one place for everything. CI pushes images there, the cluster pulls them from there, and, as it turns out further down, the cluster's own configuration travels the same way. One registry, one way of proving identity, in both directions.
+
+I looked at two alternatives and dropped both quickly. Running a registry inside the cluster moves the problem rather than solving it: the cluster can reach it, but CI now needs a credential for it. And keeping GitHub's registry with a narrower token would still have been a token, which was the thing I was trying to get rid of.
+
+The choice has costs, and they are worth stating before you make it.
+
+The cloud becomes a dependency. If its registry or its token exchange is down, nothing new reaches the cluster. What keeps running, and what to do about the rest, is the last section of this post.
+
+It can cost money, so I set a budget alert, and found out that it is only that: an alert. On an ordinary pay-as-you-go account, none of the three clouds will stop spending for you. Google documents how to build your own switch that turns billing off when a budget is reached, which also stops every service in the project, image pulls included. AWS can run an action when a budget is crossed, such as applying a policy you wrote in advance to restrict what the account may do. Azure has a real spending limit, but only on free and credit-based subscriptions. For a registry holding a handful of images, the bill is small. It is still worth knowing that the alert is not a ceiling.
+
+And the cluster's signing key, which used to concern only the cluster, is now something the cloud trusts. Replacing it means telling the cloud about the new key first, so it becomes a planned step rather than something that happens to you during an upgrade.
 
 # Pulling an image as the pod that needs it
 
