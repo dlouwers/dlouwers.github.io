@@ -3,8 +3,8 @@ title: "The model never writes a number, part 2: harnessing and localising LLM o
 date: 2026-11-09
 summary: "DRAFT — Part two of letting an LLM write about my portfolio. The model writes names instead of numbers, code fills them in the way the reader writes them, and every reply is checked before it is stored."
 tags: [llm, go, localisation]
-cover: /img/posts/model-never-writes-a-number/cover.png
-coverAlt: "Isometric illustration on a dark navy grid. On the left, a machine with brass gears behind glass takes in a stack of dark blocks and sets out a row of glowing teal tiles. In the centre, a glowing orb shines a beam onto an unrolled scroll of wavy lines with empty slots outlined in orange. On the right, a phone and a monitor show the same kind of page with teal tiles in the slots."
+cover: /img/posts/model-never-writes-a-number/cover-part-2.png
+coverAlt: "Isometric illustration of three floating platforms against a dark starry sky, linked by glowing teal and orange traces. On the left, a glowing amber orb shines onto a scroll on a desk; along its edge are empty slots outlined in orange, each with a small blank tag. In the centre, the scroll rides a conveyor through an arched gate with a teal light curtain, a small coral shard drops from it into a glowing tray, and an orange arrow curves from the gate back to the desk. On the right, a phone and a monitor show the scroll with its slots filled by teal tiles, stacked on the phone and in a row on the monitor."
 draft: false
 ---
 
