@@ -70,19 +70,23 @@ SOURCES FOR THE VENDOR CLAIMS (checked 2026-10-20)
 
 # Every homelab has a token in a Secret
 
-The opening should be the reader's situation, not mine.
+Sooner or later, a cluster needs to reach something private. An image you have not published, a repository it reads its configuration from, a library your build depends on. The quickest way through is always the same: generate a personal access token, paste it into a Kubernetes Secret or a CI secret, and move on. It works the first time, so it stays.
 
-- The familiar moment: a private image, a private repository, a CI job that needs to push somewhere. The quickest way through is a personal access token, pasted into a Kubernetes Secret or a CI secret. It works, so it stays.
-- What that token is: a password that never expires, or expires on a date nobody remembers, that usually has more access than the job needs, and that gets copied — to a second repository, a second secret store, a backup.
-- What it costs, concretely: rotating it means finding every copy; revoking it means something breaks and you find out which; leaking it means whoever has it can do whatever it can do, until you notice.
-- My version of that list, briefly and in plain words: one token to pull images, two keys so the cluster could read and write its own configuration in git, four copies of a key so CI could fetch a private library. Say that by the end, all but one were gone, and that the post is about how.
-- Scope, stated early and honestly: this is about how *machines* authenticate to each other — CI, the registry, the cluster. Application secrets such as database passwords and third-party API keys are still secrets, and a different problem (a possible follow-up).
+What you have made at that moment is a password. It never expires, or it expires on a date nobody wrote down. It can usually do more than the job needs, because the permissions on offer are coarse and finding the narrowest one is tedious. And it does not stay in one place. The second repository that needs the same access gets a copy. The backup of your secrets gets a copy. So does the note you left yourself for the day you rotate it.
+
+That day is where the cost shows. Rotating the token means finding every copy first, and you will miss one. Revoking it means something breaks, and you learn what depended on it by watching what fails. Leaking it — in a log line, a screenshot, a repository that turned out to be public — gives whoever finds it everything the token can do, for as long as it takes you to notice.
+
+My home cluster had five of these. A token so the cluster could pull its own application images. A key that let it read its configuration from three repositories, and a second key that let it write version updates back. A key copied into four places so that builds could fetch a private library. And one more, for publishing a package. Each had been the quickest way through at the time.
+
+By the end, four of them were gone, and the fifth sits somewhere nobody can read it, me included. None of them was replaced by a different secret. This post is about how that works, and about the one place where it does not.
+
+One boundary before going on. This is about how machines prove who they are to each other: the build system, the registry and the cluster. The passwords applications use for their own databases, and the keys they hold for other people's APIs, are still secrets, kept the way they were. That is a different problem, and a different post.
 
 # The idea: prove who you are, don't hold a key
 
 One idea, explained well enough that the rest of the post is just examples.
 
-<figure class="d2-diagram" role="img" aria-label="DRAFT: A GitHub Actions workflow, Flux and an application pod each send a signed statement of who they are to a token exchange at a cloud provider, which hands back a token that lives for an hour and grants access to the registry.">
+<figure class="d2-diagram" role="img" aria-label="DRAFT: A CI workflow on GitHub, Flux in the cluster and an app pod in the cluster each present a signed statement of who they are to a token exchange at a cloud provider. The workflow's is signed by GitHub, the other two by the cluster. The exchange grants an hour of access to the registry.">
   <img src="/img/diagrams/secret-free-overview.svg" alt="" />
   <figcaption>DRAFT: Nobody holds a key. Everything that needs access proves who it is, and gets an hour.</figcaption>
 </figure>
@@ -110,9 +114,9 @@ One idea, explained well enough that the rest of the post is just examples.
 
 The technically most interesting part; give it room.
 
-<figure class="d2-diagram" role="img" aria-label="DRAFT: A pod runs as ServiceAccount my-app. The kubelet asks a credential provider plugin for registry credentials, handing it a token for my-app. The plugin swaps that token at the cloud provider for a registry token valid for an hour, and the kubelet pulls the image as my-app.">
+<figure class="d2-diagram" role="img" aria-label="DRAFT: Sequence. The kubelet sees that pod my-app needs an image from the registry. It asks the credential provider plugin for credentials, handing it a token for ServiceAccount my-app. The plugin swaps that token at the cloud token exchange for a registry token valid for one hour and returns it. The kubelet pulls the image as my-app.">
   <img src="/img/diagrams/secret-free-image-pull.svg" alt="" />
-  <figcaption>DRAFT: The pull happens as the pod's own identity. There is no pull secret.</figcaption>
+  <figcaption>DRAFT: The pull happens as the pod's own identity. There is no pull secret, and a ServiceAccount the cloud was never told to trust gets nothing.</figcaption>
 </figure>
 
 - The puzzle, posed to the reader: the image is pulled before the container starts, by the kubelet (introduce: the agent on each node that starts containers), not by the application. So whose identity is the pull?
@@ -141,9 +145,9 @@ The technically most interesting part; give it room.
 
 # Letting Flux read its configuration without GitHub
 
-<figure class="d2-diagram" role="img" aria-label="DRAFT: A merged change makes CI package the configuration as an artifact and push it to the registry at the cloud provider as the workflow. Flux in the home cluster pulls it every minute as its own ServiceAccount and applies it.">
+<figure class="d2-diagram" role="img" aria-label="DRAFT: Sequence. After a merge, the CI workflow on GitHub pushes the configuration to the cloud registry as the workflow. Every minute, Flux in the cluster asks the registry for anything new, as its own ServiceAccount, receives the new artifact and applies it to the cluster.">
   <img src="/img/diagrams/secret-free-flux-oci.svg" alt="" />
-  <figcaption>DRAFT: The cluster's configuration travels through the same registry as its images.</figcaption>
+  <figcaption>DRAFT: The cluster's configuration travels through the same registry as its images. Flux never talks to GitHub.</figcaption>
 </figure>
 
 - Introduce Flux in a sentence: it keeps the cluster in line with configuration stored in git, by polling the repository and applying what changed.
