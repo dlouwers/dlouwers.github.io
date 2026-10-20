@@ -1,6 +1,6 @@
 ---
 title: "A homelab with nothing to rotate, part 2: configuration, conditions and the last key"
-date: 2026-10-19
+date: 2026-10-26
 summary: "Part two of replacing every stored credential in my home cluster. Flux reads its configuration from a registry instead of GitHub, the trust conditions do the real work, one key is left, and the cluster survives the cloud being down."
 tags: [homelab, kubernetes, k3s, security, workload-identity]
 cover: /img/posts/homelab-nothing-to-rotate/cover-part-2.png

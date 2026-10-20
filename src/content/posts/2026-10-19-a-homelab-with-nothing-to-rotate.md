@@ -18,7 +18,7 @@ That day is where the cost shows. Rotating the token means finding every copy fi
 
 My home cluster had five of these. A token so the cluster could pull its own application images. A key that let it read its configuration from three repositories, and a second key that let it write version updates back. A key copied into four places so that builds could fetch a private library. And one more, for publishing a package. Each had been the quickest way through at the time.
 
-By the end, four of them were gone, and the fifth sits somewhere nobody can read it, me included. None of them was replaced by a different secret. This is the first of two posts about how that works. This one covers the idea, the choice of registry, and how images reach the cluster. [The second](/posts/2026-10-19-a-homelab-with-nothing-to-rotate-part-2/) covers the cluster's configuration, the conditions that decide who gets in, the one key that is left, and what happens when the cloud is down.
+By the end, four of them were gone, and the fifth sits somewhere nobody can read it, me included. None of them was replaced by a different secret. This is the first of two posts about how that works. This one covers the idea, the choice of registry, and how images reach the cluster. The second, out on 26 October, covers the cluster's configuration, the conditions that decide who gets in, the one key that is left, and what happens when the cloud is down.
 
 One boundary before going on. This is about how machines prove who they are to each other: the build system, the registry and the cluster. The passwords applications use for their own databases, and the keys they hold for other people's APIs, are still secrets, kept the way they were. That is a different problem, and a different post.
 
@@ -108,4 +108,4 @@ The second is that a pull that works does not prove much. It might work because 
 
 # Next: the configuration
 
-Images were the first thing the cluster had to fetch without a key. The second is its own configuration, which it used to read straight from GitHub, and GitHub accepts no badge. How that was solved, how to write the conditions that decide who gets in, and the one key I could not get rid of, are in [part two](/posts/2026-10-19-a-homelab-with-nothing-to-rotate-part-2/).
+Images were the first thing the cluster had to fetch without a key. The second is its own configuration, which it used to read straight from GitHub, and GitHub accepts no badge. How that was solved, how to write the conditions that decide who gets in, and the one key I could not get rid of, are in part two, out on 26 October.
