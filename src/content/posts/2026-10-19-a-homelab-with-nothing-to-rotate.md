@@ -123,36 +123,48 @@ And the cluster's signing key, which used to concern only the cluster, is now so
 
 # Pulling an image as the pod that needs it
 
-The technically most interesting part; give it room.
+Here is a puzzle that looks simple. A pod is scheduled onto a node and needs an image from a private registry. Who pulls it? Not the application: it does not exist yet. The pull is done by the kubelet, the agent on every node that starts and stops containers, before any container of the pod runs. So when the registry asks "who are you?", what is the answer?
+
+For most clusters the answer is an image pull secret: a registry password stored in a Secret, which the kubelet hands to the registry on the pod's behalf. That is a stored credential again, and in my case it was the first key on the list.
+
+Kubernetes has a second answer, and it has had it for a while. Instead of reading a Secret, the kubelet can run a small program, a *credential provider plugin*, and ask it for registry credentials whenever it is about to pull from a particular registry. The plugin replies with a username and password, and the kubelet caches them for as long as the plugin says they are good. Every cloud ships such a plugin for its own registry.
+
+What those plugins used to lack was any idea of which pod they were pulling for. They authenticated as the node, using whatever identity the cloud had given the machine. That removed the stored password, but at a price: every pod on a node could pull everything the node could, and there was no way to say "only this application may pull this image".
+
+That changed recently. The kubelet can now hand the plugin a token for the pod's own ServiceAccount, minted for this purpose and addressed to the cloud. The plugin presents it at the cloud's token exchange, exactly as described earlier, and gets back a registry credential that belongs to that ServiceAccount and to nothing else. The pull happens as the pod.
 
 <figure class="d2-diagram" role="img" aria-label="DRAFT: Sequence. The kubelet sees that pod my-app needs an image from the registry. It asks the credential provider plugin for credentials, handing it a token for ServiceAccount my-app. The plugin swaps that token at the cloud token exchange for a registry token valid for one hour and returns it. The kubelet pulls the image as my-app.">
   <img src="/img/diagrams/secret-free-image-pull.svg" alt="" />
   <figcaption>DRAFT: The pull happens as the pod's own identity. There is no pull secret, and a ServiceAccount the cloud was never told to trust gets nothing.</figcaption>
 </figure>
 
-- The puzzle, posed to the reader: the image is pulled before the container starts, by the kubelet (introduce: the agent on each node that starts containers), not by the application. So whose identity is the pull?
-- The usual answer is an image pull secret: a stored credential again.
-- The newer answer: Kubernetes lets the kubelet call a small plugin to get registry credentials, and can hand that plugin a token for the pod's ServiceAccount. The plugin swaps it at the cloud provider and returns a registry token. This part is plain Kubernetes, the same on every cloud; show the kubelet side, trimmed, because a reader can reuse it:
+The kubelet side is plain Kubernetes and the same on every cloud. It is a configuration file that the kubelet reads at startup, and trimmed to what matters it looks like this:
 
-  ```yaml
-  apiVersion: kubelet.config.k8s.io/v1
-  kind: CredentialProviderConfig
-  providers:
-    - name: <your-credential-provider>
-      apiVersion: credentialprovider.kubelet.k8s.io/v1
-      matchImages: ["<your registry's host>"]
-      defaultCacheDuration: "50m"
-      tokenAttributes:
-        serviceAccountTokenAudience: "<what your cloud expects>"
-        requireServiceAccount: true
-  ```
+```yaml
+apiVersion: kubelet.config.k8s.io/v1
+kind: CredentialProviderConfig
+providers:
+  - name: <your-credential-provider>
+    apiVersion: credentialprovider.kubelet.k8s.io/v1
+    matchImages: ["<your registry's host>"]
+    defaultCacheDuration: "50m"
+    tokenAttributes:
+      serviceAccountTokenAudience: "<what your cloud expects>"
+      cacheType: Token
+      requireServiceAccount: true
+```
 
-  Explain the two lines that matter: `matchImages` (only images from that one registry go through the plugin; everything else pulls as before) and the token attributes (the kubelet mints a token for the pod's ServiceAccount, for this purpose only). This arrived as alpha in Kubernetes 1.33 and has been beta, on by default, since 1.34.
-- Contrast with how image pulls from a cloud registry used to work: the plugin authenticated as the *node*, so every pod on a node could pull whatever the node could.
-- Each cloud's own plugin now accepts the pod's token: AWS's assumes a role named in an annotation on the ServiceAccount, Azure's exchanges it as a federated credential. Google's only works on Google's own Kubernetes service, because it expects that service's identity setup. That gap is why I wrote a small plugin for Google outside its managed Kubernetes: released with a verifiable build record, installed on each node by checksum. Link to it; a reader on AWS or Azure should use the official plugin.
-- How I knew it worked, which is the convincing part:
-  - a test pod that must pull fresh every time, because a cached image hides a broken pull;
-  - a pod whose ServiceAccount was never meant to have access: refused by the cloud provider. That refusal is the proof that the identity does the work, not some leftover credential on the node.
+Two parts of it do the work. `matchImages` limits the plugin to one registry: images from anywhere else are pulled exactly as before, and the plugin never sees them. `tokenAttributes` is the new part. It tells the kubelet to mint a token for the pod's ServiceAccount, with the audience your cloud expects, and to cache the resulting credential per token rather than per node, so one pod's credential is never reused for another. This arrived as an alpha feature in Kubernetes 1.33 and has been beta, and on by default, since 1.34.
+
+One more piece is easy to miss. A node may not ask for ServiceAccount tokens addressed to any audience it likes; since 1.33 it needs explicit permission for each one, granted with an ordinary RBAC rule. Without it, the plugin is simply never called, and the only trace is an audience error in the kubelet's log. If you set this up and the pull fails with nothing in the plugin's output, look there first.
+
+On AWS and Azure the official plugins already accept the pod's token. Amazon's assumes a role named in an annotation on the ServiceAccount; Azure's presents the token as a federated credential. Google's plugin is the odd one out. It only works on Google's own managed Kubernetes, because it expects the identity setup that service creates, and there was nothing for a cluster running anywhere else. So I wrote one: [gcp-wif-credential-provider](https://github.com/dlouwers/gcp-wif-credential-provider), about three hundred lines of Go without dependencies. Each release carries a signed record of the build that produced it, and my nodes install it by checksum, so what runs next to the kubelet is the binary that was built from the source. If you are on AWS or Azure, use the official plugin; this one exists to fill a gap, not to compete.
+
+Then the part that convinced me, which is testing. Two things make a test of image pulls lie to you.
+
+The first is the cache. A node keeps every image it has pulled, and a pod that asks for an image the node already has will usually just get it, without the kubelet asking the registry anything. A broken pull can go unnoticed for weeks, until a pod lands on a fresh node. So the test pod is set to pull every time it starts, and it is worth running it on every node.
+
+The second is that a pull that works does not prove much. It might work because of the new mechanism, or because of something left over: an old pull secret, a node identity, a cached image. The proof is the other half. A pod whose ServiceAccount the cloud was never told about has to be refused, with an authorisation error from the registry. When that pod fails and the first one succeeds, on the same node, against the same image, the only thing that differs is who the pod is. That is the identity doing the work.
 
 # Letting Flux read its configuration without GitHub
 
