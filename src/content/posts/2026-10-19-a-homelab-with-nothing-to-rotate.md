@@ -2,7 +2,7 @@
 title: A homelab with nothing to rotate
 date: 2026-10-19
 summary: My home Kubernetes cluster used to run on long-lived keys, copied into more places than I could list. Now the systems involved prove who they are to each other with short-lived tokens, and there is almost nothing left to rotate.
-tags: [homelab, kubernetes, k3s, security, workload-identity, gcp]
+tags: [homelab, kubernetes, k3s, security, workload-identity]
 draft: false
 ---
 
@@ -13,9 +13,18 @@ WHO THIS IS FOR
 Someone who runs Kubernetes at home or at work and uses GitHub Actions, and
 who has at some point pasted a token into a Secret and felt slightly bad
 about it. They know what a container registry, a ServiceAccount and a CI
-workflow are. They do NOT know Google Cloud IAM, workload identity
-federation, or how the kubelet pulls images. Nothing in this post may
-assume they have seen my repository.
+workflow are. They do NOT know cloud IAM, workload identity federation, or
+how the kubelet pulls images. Nothing in this post may assume they have
+seen my repository.
+
+Standalone post, not part of the homelab series.
+
+VENDOR-NEUTRAL
+The idea is the subject, not the cloud. Describe each mechanism in generic
+terms ("the cloud provider", "its registry", "its key management service")
+and mention that I happened to use Google Cloud once, in the registry
+section, alongside the AWS and Azure equivalents. Provider-specific syntax
+appears only where it is marked as one example of many.
 
 RULES FOR THE PROSE
 - Explain every term the first time it appears, in one plain sentence, or
@@ -28,10 +37,9 @@ RULES FOR THE PROSE
   is missing. The failure case is what makes it believable.
 
 OPEN QUESTIONS FOR THE AUTHOR
-- Part of the homelab series, or standalone? (Series part 1 is unpublished.)
-- Name Google Cloud in the title, or keep it vendor-neutral and say early
-  that the same idea works with AWS and Azure?
 - Diagram captions and aria-labels below are drafts.
+- Before writing the AWS and Azure equivalents, verify each against their
+  current documentation; they are named here from memory.
 -->
 
 # Every homelab has a token in a Secret
@@ -48,7 +56,7 @@ The opening should be the reader's situation, not mine.
 
 One idea, explained well enough that the rest of the post is just examples.
 
-<figure class="d2-diagram" role="img" aria-label="DRAFT: A GitHub Actions workflow, Flux and an application pod each send a signed statement of who they are to a token exchange in Google Cloud, which hands back a token that lives for an hour and grants access to the registry.">
+<figure class="d2-diagram" role="img" aria-label="DRAFT: A GitHub Actions workflow, Flux and an application pod each send a signed statement of who they are to a token exchange at a cloud provider, which hands back a token that lives for an hour and grants access to the registry.">
   <img src="/img/diagrams/secret-free-overview.svg" alt="" />
   <figcaption>DRAFT: Nobody holds a key. Everything that needs access proves who it is, and gets an hour.</figcaption>
 </figure>
@@ -57,54 +65,55 @@ One idea, explained well enough that the rest of the post is just examples.
 - The two things you already have that can issue such a badge, without you storing anything:
   - GitHub Actions can give every workflow run a signed token that says "this is workflow X in repository Y, running for branch Z" (introduce: OIDC token, in one sentence — a standard format for "who I am", signed by the issuer);
   - every Kubernetes cluster already signs tokens for its ServiceAccounts ("this pod runs as ServiceAccount S in namespace N"), and publishes the public keys to check them.
-- The third piece is something that accepts those badges and swaps them for real access. Introduce workload identity federation as exactly that: you tell the cloud provider "trust tokens signed by GitHub, but only for this repository and this workflow", and it exchanges a matching token for a short-lived credential.
+- The third piece is something that accepts those badges and swaps them for real access. Introduce workload identity federation as exactly that: you tell a cloud provider "trust tokens signed by GitHub, but only for this repository and this workflow", and it exchanges a matching token for a short-lived credential. All three large clouds offer it, under slightly different names.
 - What the reader should take away: nothing long-lived is stored anywhere; access lasts about an hour; and the rule for who gets in is a readable condition, not a list of who holds a copy.
 
-# Why I put everything in Google's registry
+# Choosing a registry that accepts the badge
 
-- The deciding fact: the reader's obvious choice, GitHub's own container registry, cannot do this. Pulling a private image from it needs a token. Google Artifact Registry (introduce it as Google's registry for container images and other packages) accepts the federated badges from both GitHub and my cluster.
+- The deciding fact: the reader's obvious choice, GitHub's own container registry, cannot do this. Pulling a private image from it needs a token. What I needed was a registry that accepts federated badges from both GitHub and my cluster.
+- The large clouds' registries do: AWS's ECR, Azure's ACR, Google's Artifact Registry. I used Google's, for reasons that do not matter much here (say them in one sentence at most); everything below works the same way on the other two, with different names for the pieces.
 - So one place, one trust mechanism, for every direction: CI pushes, the cluster pulls.
-- Alternatives considered, a sentence each: running my own registry (the credential problem just moves inside the cluster), other registries without federation, keeping GitHub's registry with a token (the thing I was trying to remove).
+- Alternatives considered, a sentence each: running my own registry (the credential problem just moves inside the cluster), keeping GitHub's registry with a token (the thing I was trying to remove).
 - What it costs, before the reader asks:
-  - a dependency on Google being up (last section);
-  - real money is possible, so a budget alert — and the surprising detail that it is only an alert: Google cannot hard-cap a project, and switching billing off automatically would take every image pull down with it;
-  - the cluster's signing key becomes something Google trusts, so replacing it becomes a planned step.
+  - a dependency on the cloud provider being up (last section);
+  - real money is possible, so a budget alert — and the surprising detail that it is usually only an alert: cloud providers generally cannot hard-cap spending, and switching billing off automatically would take every image pull down with it;
+  - the cluster's signing key becomes something the cloud trusts, so replacing it becomes a planned step.
 
 # Pulling an image as the pod that needs it
 
 The technically most interesting part; give it room.
 
-<figure class="d2-diagram" role="img" aria-label="DRAFT: A pod runs as ServiceAccount my-app. The kubelet asks a credential provider plugin for registry credentials, handing it a token for my-app. The plugin swaps that token at Google for a registry token valid for an hour, and the kubelet pulls the image as my-app.">
+<figure class="d2-diagram" role="img" aria-label="DRAFT: A pod runs as ServiceAccount my-app. The kubelet asks a credential provider plugin for registry credentials, handing it a token for my-app. The plugin swaps that token at the cloud provider for a registry token valid for an hour, and the kubelet pulls the image as my-app.">
   <img src="/img/diagrams/secret-free-image-pull.svg" alt="" />
   <figcaption>DRAFT: The pull happens as the pod's own identity. There is no pull secret.</figcaption>
 </figure>
 
 - The puzzle, posed to the reader: the image is pulled before the container starts, by the kubelet (introduce: the agent on each node that starts containers), not by the application. So whose identity is the pull?
 - The usual answer is an image pull secret: a stored credential again.
-- The newer answer: Kubernetes lets the kubelet call a small plugin to get registry credentials, and can hand that plugin a token for the pod's ServiceAccount. The plugin swaps it at Google and returns a registry token. Show the kubelet side, trimmed, because a reader can reuse it:
+- The newer answer: Kubernetes lets the kubelet call a small plugin to get registry credentials, and can hand that plugin a token for the pod's ServiceAccount. The plugin swaps it at the cloud provider and returns a registry token. This part is plain Kubernetes, the same on every cloud; show the kubelet side, trimmed, because a reader can reuse it:
 
   ```yaml
   apiVersion: kubelet.config.k8s.io/v1
   kind: CredentialProviderConfig
   providers:
-    - name: gcp-wif-credential-provider
+    - name: <your-credential-provider>
       apiVersion: credentialprovider.kubelet.k8s.io/v1
-      matchImages: ["*-docker.pkg.dev"]
+      matchImages: ["<your registry's host>"]
       defaultCacheDuration: "50m"
       tokenAttributes:
-        serviceAccountTokenAudience: "<what Google expects>"
+        serviceAccountTokenAudience: "<what your cloud expects>"
         requireServiceAccount: true
   ```
 
-  Explain the two lines that matter: `matchImages` (only images from Google's registry go through the plugin; everything else pulls as before) and the token attributes (the kubelet mints a token for the pod's ServiceAccount, for this purpose only).
-- One sentence on the plugin itself: small, written for this, released with a verifiable build record, and installed on each node by checksum. Link to it.
+  Explain the two lines that matter: `matchImages` (only images from that one registry go through the plugin; everything else pulls as before) and the token attributes (the kubelet mints a token for the pod's ServiceAccount, for this purpose only). Say which Kubernetes version made this available (verify before writing).
+- Why I wrote a plugin rather than using the cloud's own: the ready-made ones I know of authenticate as the *node*, not as the pod, which means every pod on the node can pull everything the node can (verify per provider before writing). One sentence on mine: small, released with a verifiable build record, installed on each node by checksum. Link to it.
 - How I knew it worked, which is the convincing part:
   - a test pod that must pull fresh every time, because a cached image hides a broken pull;
-  - a pod whose ServiceAccount was never meant to have access: refused by Google. That refusal is the proof that the identity does the work, not some leftover credential on the node.
+  - a pod whose ServiceAccount was never meant to have access: refused by the cloud provider. That refusal is the proof that the identity does the work, not some leftover credential on the node.
 
 # Letting Flux read its configuration without GitHub
 
-<figure class="d2-diagram" role="img" aria-label="DRAFT: A merged change makes CI package the configuration as an artifact and push it to the registry in Google Cloud as the workflow. Flux in the home cluster pulls it every minute as its own ServiceAccount and applies it.">
+<figure class="d2-diagram" role="img" aria-label="DRAFT: A merged change makes CI package the configuration as an artifact and push it to the registry at the cloud provider as the workflow. Flux in the home cluster pulls it every minute as its own ServiceAccount and applies it.">
   <img src="/img/diagrams/secret-free-flux-oci.svg" alt="" />
   <figcaption>DRAFT: The cluster's configuration travels through the same registry as its images.</figcaption>
 </figure>
@@ -120,29 +129,31 @@ The technically most interesting part; give it room.
 
 Short section; it is the part a reader copying this is most likely to get wrong.
 
-- The conditions are the security. Show one, generic:
+- The conditions are the security. Show what GitHub's token says, trimmed to the fields that matter, and what to require of each — not one provider's condition syntax:
 
-  ```
-  assertion.repository_id == '123456789'
-  && assertion.ref == 'refs/heads/main'
-  && assertion.job_workflow_ref.startsWith('owner/repo/.github/workflows/publish.yml@')
+  ```json
+  {
+    "repository_id": "123456789",
+    "ref": "refs/heads/main",
+    "job_workflow_ref": "owner/repo/.github/workflows/publish.yml@refs/heads/main"
+  }
   ```
 
-  Explain each line: the repository by number, not name (a deleted and re-created repository with the same name is a different repository); the branch; and the one workflow file allowed to write.
-- One trap worth a paragraph: in Google's setup, a permission granted to "repository X" applies to every rule in the same group of trust rules. Put a read-only rule and a write rule in the same group and they quietly share access. One group per kind of access avoids it.
+  Explain each field: the repository by number, not name (a deleted and re-created repository with the same name is a different repository); the branch; and the one workflow file allowed to write. Then one sentence: each cloud lets you require these, in its own syntax.
+- One general lesson, with my provider as the example: find out how far a grant reaches. On Google, a permission granted to "repository X" applies across every trust rule in the same group, so a read-only rule and a write rule in one group quietly share access. Other providers scope it differently; the habit to keep is separating read and write trust, and testing that the read side cannot write.
 
 # The one key I kept
 
 - The honest limit: to change something *on GitHub* — here, publishing a new version of my Homebrew package to another repository — GitHub still wants one of its own credentials. It accepts no federated badge for that.
-- What I did instead of a stored key: the key exists only inside Google's key management service, where it can sign but can never be read out, and only the release workflow, on a release tag, can ask it to sign. It is federation with a key-shaped last step.
+- What I did instead of a stored key: the key exists only inside the cloud provider's key management service, where it can sign but can never be read out, and only the release workflow, on a release tag, can ask it to sign. It is federation with a key-shaped last step.
 - One sentence on the alternative I designed and parked (the package repository pulling verified releases itself), and why it only becomes better with an organisation account.
 
-# When Google is down
+# When the cloud is down
 
 - What keeps working: everything that is already running; Flux keeps applying the last configuration it fetched.
 - What stops: anything new reaching the cluster.
 - The escape hatch: apply the configuration from a local checkout, then hand control back to Flux once the registry is reachable. Rehearsed, not theoretical: a cold restart of the component that fetches artifacts recovered in about five minutes.
-- Rebuilding the cluster from scratch has one step outside it: telling Google to trust the new cluster's signing key.
+- Rebuilding the cluster from scratch has one step outside it: telling the cloud provider to trust the new cluster's signing key.
 
 # Wrapping up
 
