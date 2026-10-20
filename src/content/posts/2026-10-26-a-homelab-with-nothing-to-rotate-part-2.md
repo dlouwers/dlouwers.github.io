@@ -167,6 +167,6 @@ None of them was replaced by another secret, and the thing to rotate is down to 
 
 If you take one thing from these posts for your own setup, let it be the test, not the mechanism. Replace a secret only with something you can check in both directions: it lets the right thing in, and it keeps the wrong thing out. The first check you will do anyway, because otherwise nothing works. The second is the one that tells you the new rule does anything at all. A pull that succeeds might be the identity at work, or a leftover credential, or a cached image. Until you have watched something be refused, you have not removed a credential. You have only stopped seeing it.
 
-The credential provider plugin I wrote for Google is at [gcp-wif-credential-provider](https://github.com/dlouwers/gcp-wif-credential-provider). On AWS or Azure you will not need it.
+If you run your own cluster and pull from Google's Artifact Registry, the credential provider plugin I wrote for that is at [gcp-wif-credential-provider](https://github.com/dlouwers/gcp-wif-credential-provider). On Google's managed Kubernetes, or with Amazon's or Azure's registry, the official plugin covers it and you will not need mine.
 
 What these posts left alone are the secrets applications hold for themselves: database passwords, API keys for other people's services. Those are still secrets, and they are a different post.
