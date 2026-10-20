@@ -1,118 +1,151 @@
 ---
 title: A homelab with nothing to rotate
 date: 2026-10-19
-summary: My cluster used to hold a classic GitHub PAT, two GitHub App keys and four copies of a third. Now CI, the registry and the cluster trust each other through workload identity federation, and there is nothing left to rotate. Almost.
+summary: My home Kubernetes cluster used to run on long-lived keys, copied into more places than I could list. Now the systems involved prove who they are to each other with short-lived tokens, and there is almost nothing left to rotate.
 tags: [homelab, kubernetes, k3s, security, workload-identity, gcp]
-draft: true
+draft: false
 ---
 
 <!--
-OUTLINE — not prose yet. Each section lists the beats, the evidence to cite,
-and the source to check it against (issue numbers are dlouwers/experiments
-unless noted). Write the prose in the voice of the "thirty-three decisions"
-post: first person, claims as measurements, wrong turns kept in.
+OUTLINE, second version. Not prose yet.
 
-Open questions for the author:
-- One long post, or split section 3 (the kubelet plugin) into its own part?
-- Keep the FluxResourceMetricsIncomplete mistake (section 4) as the example
-  of verifying the new state, or drop it?
-- Part of the homelab series (post 01 is still on its own branch), or a
-  standalone post that links to it?
+WHO THIS IS FOR
+Someone who runs Kubernetes at home or at work and uses GitHub Actions, and
+who has at some point pasted a token into a Secret and felt slightly bad
+about it. They know what a container registry, a ServiceAccount and a CI
+workflow are. They do NOT know Google Cloud IAM, workload identity
+federation, or how the kubelet pulls images. Nothing in this post may
+assume they have seen my repository.
+
+RULES FOR THE PROSE
+- Explain every term the first time it appears, in one plain sentence, or
+  do not use it. Terms that need introducing are listed per section below.
+- No issue numbers, no file names from my repository, no internal resource
+  names. Name things by their role ("the workflow that builds the image"),
+  not by what they are called in my setup.
+- Code only where the reader could reuse it, and short.
+- Each mechanism: what proves what to whom, and what happens when that proof
+  is missing. The failure case is what makes it believable.
+
+OPEN QUESTIONS FOR THE AUTHOR
+- Part of the homelab series, or standalone? (Series part 1 is unpublished.)
+- Name Google Cloud in the title, or keep it vendor-neutral and say early
+  that the same idea works with AWS and Azure?
+- Diagram captions and aria-labels below are drafts.
 -->
 
-*Part N of a series on auditing a two-node homelab. [The rest of the series.](/tags/homelab/)*
+# Every homelab has a token in a Secret
 
-# The inventory that started it
+The opening should be the reader's situation, not mine.
 
-- Open on `credentials.md` as it stood in early October 2026. The machine credentials:
-  - a classic GitHub PAT, so the cluster could pull private images from GHCR (`ghcr-pull`);
-  - `github-app-read`, so Flux could read three repositories;
-  - `github-app-write`, so image automation could commit tag bumps to git;
-  - `DS_APP_PRIVATE_KEY`, four copies across two repositories and two secret stores, with a rotation procedure written in a comment;
-  - the Homebrew tap App.
-- What they share: long-lived, mostly copied to more than one place, and each one a thing to rotate on a calendar nobody keeps.
-- Scope it honestly, early. "Secret-free" means the trust between CI, registry and cluster. Application secrets (OAuth clients, the DNS token, the S3 key for backups) are still SealedSecrets, and say so before a reader finds out.
+- The familiar moment: a private image, a private repository, a CI job that needs to push somewhere. The quickest way through is a personal access token, pasted into a Kubernetes Secret or a CI secret. It works, so it stays.
+- What that token is: a password that never expires, or expires on a date nobody remembers, that usually has more access than the job needs, and that gets copied — to a second repository, a second secret store, a backup.
+- What it costs, concretely: rotating it means finding every copy; revoking it means something breaks and you find out which; leaking it means whoever has it can do whatever it can do, until you notice.
+- My version of that list, briefly and in plain words: one token to pull images, two keys so the cluster could read and write its own configuration in git, four copies of a key so CI could fetch a private library. Say that by the end, all but one were gone, and that the post is about how.
+- Scope, stated early and honestly: this is about how *machines* authenticate to each other — CI, the registry, the cluster. Application secrets such as database passwords and third-party API keys are still secrets, and a different problem (a possible follow-up).
 
-# Why Google Artifact Registry, for a homelab
+# The idea: prove who you are, don't hold a key
 
-- GHCR is the obvious home and has no federation: a private pull needs a PAT, full stop.
-- GAR accepts federated identity from both sides with one trust plane:
-  - GitHub Actions OIDC tokens (for CI pushing);
-  - the k3s cluster's own ServiceAccount tokens, once its JWKS is uploaded to a workload identity pool (for the cluster pulling).
-- Alternatives weighed: a self-hosted registry (moves the credential problem inside the cluster), Harbor, GHCR with an App token (still a key).
-- The costs, stated plainly:
-  - GAR and Google STS become a hard dependency of every pull and every reconcile (see the last section);
-  - the €100 budget is a notification, not a cap — GCP cannot hard-cap a normal project, and auto-disabling billing would take every pull down with it;
-  - the cluster's ServiceAccount signing key becomes something with a rotation procedure (`credentials.md`, "Rotating the k3s ServiceAccount signing key").
-- Source: #487.
+One idea, explained well enough that the rest of the post is just examples.
 
-# Pulling images as the pod
+<figure class="d2-diagram" role="img" aria-label="DRAFT: A GitHub Actions workflow, Flux and an application pod each send a signed statement of who they are to a token exchange in Google Cloud, which hands back a token that lives for an hour and grants access to the registry.">
+  <img src="/img/diagrams/secret-free-overview.svg" alt="" />
+  <figcaption>DRAFT: Nobody holds a key. Everything that needs access proves who it is, and gets an hour.</figcaption>
+</figure>
 
-<figure class="d2-diagram" role="img" aria-label="TODO: describe the image pull flow">
+- The analogy: a key you copy versus a badge checked at the door. Anyone with a copy of the key gets in. A badge is issued for today, to you, by someone the door already trusts.
+- The two things you already have that can issue such a badge, without you storing anything:
+  - GitHub Actions can give every workflow run a signed token that says "this is workflow X in repository Y, running for branch Z" (introduce: OIDC token, in one sentence — a standard format for "who I am", signed by the issuer);
+  - every Kubernetes cluster already signs tokens for its ServiceAccounts ("this pod runs as ServiceAccount S in namespace N"), and publishes the public keys to check them.
+- The third piece is something that accepts those badges and swaps them for real access. Introduce workload identity federation as exactly that: you tell the cloud provider "trust tokens signed by GitHub, but only for this repository and this workflow", and it exchanges a matching token for a short-lived credential.
+- What the reader should take away: nothing long-lived is stored anywhere; access lasts about an hour; and the rule for who gets in is a readable condition, not a list of who holds a copy.
+
+# Why I put everything in Google's registry
+
+- The deciding fact: the reader's obvious choice, GitHub's own container registry, cannot do this. Pulling a private image from it needs a token. Google Artifact Registry (introduce it as Google's registry for container images and other packages) accepts the federated badges from both GitHub and my cluster.
+- So one place, one trust mechanism, for every direction: CI pushes, the cluster pulls.
+- Alternatives considered, a sentence each: running my own registry (the credential problem just moves inside the cluster), other registries without federation, keeping GitHub's registry with a token (the thing I was trying to remove).
+- What it costs, before the reader asks:
+  - a dependency on Google being up (last section);
+  - real money is possible, so a budget alert — and the surprising detail that it is only an alert: Google cannot hard-cap a project, and switching billing off automatically would take every image pull down with it;
+  - the cluster's signing key becomes something Google trusts, so replacing it becomes a planned step.
+
+# Pulling an image as the pod that needs it
+
+The technically most interesting part; give it room.
+
+<figure class="d2-diagram" role="img" aria-label="DRAFT: A pod runs as ServiceAccount my-app. The kubelet asks a credential provider plugin for registry credentials, handing it a token for my-app. The plugin swaps that token at Google for a registry token valid for an hour, and the kubelet pulls the image as my-app.">
   <img src="/img/diagrams/secret-free-image-pull.svg" alt="" />
-  <figcaption>TODO</figcaption>
+  <figcaption>DRAFT: The pull happens as the pod's own identity. There is no pull secret.</figcaption>
 </figure>
 
-- The problem: the kubelet pulls before the pod exists, so whose identity is the pull?
-- The mechanism: kubelet credential providers can be handed a ServiceAccount token for the pod being started. A small plugin, `gcp-wif-credential-provider`, exchanges it at STS for a GAR token.
-- It matches only `*-docker.pkg.dev`, so every other image pull in the cluster is untouched.
-- Supply chain of the plugin itself: released with build-provenance attestation, pinned by sha256 in the Ansible `k3s_server` / `k3s_agent` roles, RBAC for `system:nodes` on the audience.
-- The evidence, and why it had to be this shape:
-  - positive: throwaway pods with `imagePullPolicy: Always`, placed on each node with `nodeName`, because the image cache hides a broken pull;
-  - negative, twice: an unannotated ServiceAccount (the plugin is never called) and an annotated one outside the attribute condition (STS refuses, `rejected by the attribute condition`). Both `ErrImagePull`. That is what proves the identity does the work, not some ambient credential on the node.
-- Source: #487, the plugin repository.
+- The puzzle, posed to the reader: the image is pulled before the container starts, by the kubelet (introduce: the agent on each node that starts containers), not by the application. So whose identity is the pull?
+- The usual answer is an image pull secret: a stored credential again.
+- The newer answer: Kubernetes lets the kubelet call a small plugin to get registry credentials, and can hand that plugin a token for the pod's ServiceAccount. The plugin swaps it at Google and returns a registry token. Show the kubelet side, trimmed, because a reader can reuse it:
 
-# Flux without a GitHub credential
+  ```yaml
+  apiVersion: kubelet.config.k8s.io/v1
+  kind: CredentialProviderConfig
+  providers:
+    - name: gcp-wif-credential-provider
+      apiVersion: credentialprovider.kubelet.k8s.io/v1
+      matchImages: ["*-docker.pkg.dev"]
+      defaultCacheDuration: "50m"
+      tokenAttributes:
+        serviceAccountTokenAudience: "<what Google expects>"
+        requireServiceAccount: true
+  ```
 
-<figure class="d2-diagram" role="img" aria-label="TODO: describe the OCI artifact flow">
+  Explain the two lines that matter: `matchImages` (only images from Google's registry go through the plugin; everything else pulls as before) and the token attributes (the kubelet mints a token for the pod's ServiceAccount, for this purpose only).
+- One sentence on the plugin itself: small, written for this, released with a verifiable build record, and installed on each node by checksum. Link to it.
+- How I knew it worked, which is the convincing part:
+  - a test pod that must pull fresh every time, because a cached image hides a broken pull;
+  - a pod whose ServiceAccount was never meant to have access: refused by Google. That refusal is the proof that the identity does the work, not some leftover credential on the node.
+
+# Letting Flux read its configuration without GitHub
+
+<figure class="d2-diagram" role="img" aria-label="DRAFT: A merged change makes CI package the configuration as an artifact and push it to the registry in Google Cloud as the workflow. Flux in the home cluster pulls it every minute as its own ServiceAccount and applies it.">
   <img src="/img/diagrams/secret-free-flux-oci.svg" alt="" />
-  <figcaption>TODO</figcaption>
+  <figcaption>DRAFT: The cluster's configuration travels through the same registry as its images.</figcaption>
 </figure>
 
-- Flux stops reading git. Every push to `main` is published by CI as an OCI artifact in GAR; source-controller pulls it as a Kubernetes ServiceAccount through the same pool (`provider: gcp`, the `ObjectLevelWorkloadIdentity` gate).
-- The kink: branch protection. `GITHUB_TOKEN` cannot push past a protected `main`, a pull request it opens triggers no checks, and it cannot be a ruleset bypass actor. So CI stopped writing image tags to git at all and sets them *in the artifact*. Image automation, and its write App, went away entirely.
-- Rollback without git: retag an older artifact as `main`.
-- Verifying the new state is live: `lastAppliedOriginRevision` names the commit; "reconcile exited 0" proves only that a command ran.
-- Possible example: removing the image controllers made a metrics-completeness alert fire, because its expected count was written for a cluster that had them. Mine; fixed the same evening.
-- Source: #509.
+- Introduce Flux in a sentence: it keeps the cluster in line with configuration stored in git, by polling the repository and applying what changed.
+- The problem: polling a private repository needs a GitHub credential, and GitHub accepts no federated badge for its own API.
+- The trick: don't let the cluster read git at all. Every merge, CI packages the configuration into an artifact (introduce: the same format as a container image, holding files instead of a filesystem) and pushes it to the registry. Flux pulls it from there with its own ServiceAccount, exactly like the image pull.
+- A detail readers with branch protection will recognise: automation that commits version bumps back to git does not mix with a protected main branch, and GitHub's built-in CI token cannot be exempted. So the version numbers are now written into the artifact instead of committed to git. One fewer write credential, and branch protection stays on.
+- Rolling back no longer needs git: point the "current" tag at an older artifact.
+- What changes in day-to-day verification, in one paragraph: "the command succeeded" is not proof the cluster runs the new version; check which commit it reports having applied.
 
-# One pool per privilege
+# Who may do what
 
-<figure class="d2-diagram" role="img" aria-label="TODO: describe the identity pools">
-  <img src="/img/diagrams/secret-free-wif-pools.svg" alt="" />
-  <figcaption>TODO</figcaption>
-</figure>
+Short section; it is the part a reader copying this is most likely to get wrong.
 
-- The trap: a `principalSet` binding spans every provider in its pool. A reader and a writer in one pool quietly share each other's grants.
-- So: separate pools for the cluster, image pushes, Flux artifacts and Go modules.
-- Conditions on the numeric `repository_id` and owner id (a deleted and re-created repository with the same name is not trusted), and on `job_workflow_ref` (one workflow file may write, from one ref).
+- The conditions are the security. Show one, generic:
 
-# Even the private Go module
+  ```
+  assertion.repository_id == '123456789'
+  && assertion.ref == 'refs/heads/main'
+  && assertion.job_workflow_ref.startsWith('owner/repo/.github/workflows/publish.yml@')
+  ```
 
-- The design system is a private Go module. It now lives in a GAR Go repository, uploaded per tag from `git archive` so the hash matches what consumers already have in `go.sum`.
-- CI and image builds read it through WIF; the container build gets a `.netrc` as a BuildKit secret, never a layer.
-- Dependabot had never once managed to update it — the weekly job failed silently because it could not read the private repository.
-- Two gotchas worth a paragraph each:
-  - Dependabot's proxy refuses a direct federated token as expiring too soon (dependabot/proxy#262), so it impersonates a service account with no key instead;
-  - GAR reports the upload time as a version's release time, so a backfill puts every version inside Dependabot's cooldown.
-- Source: #526.
+  Explain each line: the repository by number, not name (a deleted and re-created repository with the same name is a different repository); the branch; and the one workflow file allowed to write.
+- One trap worth a paragraph: in Google's setup, a permission granted to "repository X" applies to every rule in the same group of trust rules. Put a read-only rule and a write rule in the same group and they quietly share access. One group per kind of access avoids it.
 
-# The one I kept
+# The one key I kept
 
-- GitHub accepts no federated identity for its own API. Writing to another repository takes an App, a PAT, a deploy key, or that repository's own `GITHUB_TOKEN` — and on a personal account the last cannot be a bypass actor (the API answers 422).
-- So the Homebrew tap App stays. Its key is non-exportable in Cloud KMS, and only the release workflow, on a `v*` tag, can get permission through OIDC to sign with it. It is federation with an App-shaped last mile.
-- The alternative is designed and parked: the tap pulls attested casks from the release itself. It becomes the better option the day the tap lives in an organisation.
-- Bridge to review: four eyes belong on the source and on the decision to release, not on files a machine derived from them.
-- Source: #505, #531.
+- The honest limit: to change something *on GitHub* — here, publishing a new version of my Homebrew package to another repository — GitHub still wants one of its own credentials. It accepts no federated badge for that.
+- What I did instead of a stored key: the key exists only inside Google's key management service, where it can sign but can never be read out, and only the release workflow, on a release tag, can ask it to sign. It is federation with a key-shaped last step.
+- One sentence on the alternative I designed and parked (the package repository pulling verified releases itself), and why it only becomes better with an organisation account.
 
-# What it costs when Google is down
+# When Google is down
 
-- What keeps working: running pods, and kustomize-controller re-applying the last artifact it fetched.
-- What does not: anything new reaching the cluster.
-- The fallback, rehearsed: build a Kustomization from a checkout, apply it as kustomize-controller, resume when the source is back. A cold restart of source-controller recovered in about five minutes.
-- A new cluster has exactly one precondition outside itself: upload its JWKS to the pool.
+- What keeps working: everything that is already running; Flux keeps applying the last configuration it fetched.
+- What stops: anything new reaching the cluster.
+- The escape hatch: apply the configuration from a local checkout, then hand control back to Flux once the registry is reachable. Rehearsed, not theoretical: a cold restart of the component that fetches artifacts recovered in about five minutes.
+- Rebuilding the cluster from scratch has one step outside it: telling Google to trust the new cluster's signing key.
 
 # Wrapping up
 
-- The new inventory: a few rows whose credential column reads "no stored credential".
-- The lesson: trade a secret away only for something you can prove — a positive test and a negative one. Otherwise you have moved a credential to where you can no longer see it.
+- Back to the opening list: of the long-lived keys, one remains, and nobody can read it.
+- The lesson, for the reader's own setup: replace a secret only with something you can test both ways — it lets the right thing in, and it keeps the wrong thing out. Without the second test you have not removed a credential, you have only stopped seeing it.
+- Pointers: the plugin, and, if written, follow-ups on application secrets and on review for a one-person cluster.
