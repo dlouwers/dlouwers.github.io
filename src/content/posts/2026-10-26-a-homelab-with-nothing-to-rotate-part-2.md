@@ -76,20 +76,34 @@ And checking a deploy needs more care, because a command that succeeds is not pr
 
 # Who may do what
 
-Short section; it is the part a reader copying this is most likely to get wrong.
+Everything so far rests on one sentence: the cloud has been told which tokens to trust. That sentence is where this setup is secure or not, and it is the part that is easiest to get wrong when you copy it. A key at least makes its danger obvious. A trust rule that is slightly too broad looks exactly like one that is right, and it works just as well, for you and for whoever else it lets in.
 
-- The conditions are the security. Show what GitHub's token says, trimmed to the fields that matter, and what to require of each — not one provider's condition syntax:
+Start with what the badge says. A GitHub Actions token carries a few dozen claims, the statements GitHub signs about the run. Trimmed to the ones that matter for access, it looks like this:
 
-  ```json
-  {
-    "repository_id": "123456789",
-    "ref": "refs/heads/main",
-    "job_workflow_ref": "owner/repo/.github/workflows/publish.yml@refs/heads/main"
-  }
-  ```
+```json
+{
+  "repository_id": "123456789",
+  "repository_owner_id": "987654",
+  "ref": "refs/heads/main",
+  "event_name": "push",
+  "job_workflow_ref": "owner/repo/.github/workflows/publish.yml@refs/heads/main"
+}
+```
 
-  Explain each field: the repository by number, not name (a deleted and re-created repository with the same name is a different repository); the branch; and the one workflow file allowed to write. Then one sentence: each cloud lets you require these, in its own syntax.
-- One general lesson, with my provider as the example: find out how far a grant reaches. On Google, a permission granted to "repository X" applies across every trust rule in the same group, so a read-only rule and a write rule in one group quietly share access. Other providers scope it differently; the habit to keep is separating read and write trust, and testing that the read side cannot write.
+Each of these is worth requiring, for a different reason.
+
+- `repository_id` is the repository by number, not by name. Names can be reused: delete a repository, or rename it, and someone can create a new one under the old name. The number belongs to that one repository forever. `repository_owner_id` does the same for the account that owns it.
+- `ref` is the branch or tag the run is for. Requiring the main branch means a run for a pull request, or for a branch someone pushed five minutes ago, gets nothing.
+- `event_name` is what started the run. A push to main and a manual run on main are different things, and you may want only one of them.
+- `job_workflow_ref` names the workflow file that is running, and the branch it was read from. This is the one people leave out, and it matters most for anything that writes. Any workflow in the repository can ask for a token. Without this condition, every workflow on main can push to your registry just as well as the one that was meant to: the one that runs tests, the one somebody adds next year, and any of them that runs a third-party action you have never read.
+
+Every cloud lets you require these, in its own syntax: conditions on a trust policy, a federated credential's subject, or an expression on the provider. Some only look at a single claim, `sub`, a string GitHub builds from a few of the others. GitHub lets you change which claims go into that string, and repositories created since mid-2026 include the numeric IDs in it by default. Find out which claims your cloud actually checks before you rely on one.
+
+The cluster side is simpler, and that is a reason to look at it twice. A pod's token says little more than "ServiceAccount S in namespace N", so the trust rule can only name those. Anyone who can create a pod in that namespace with that ServiceAccount gets its access, so namespace permissions are part of the trust boundary now. My rule admits a short list of named ServiceAccounts, and nothing else in the cluster can get a token the cloud accepts.
+
+Then a rule that is easy to miss: find out how far a grant reaches. On Google, the trust rules sit in groups called pools, and a permission granted to "repository 123456789" applies to tokens admitted by any rule in that pool, not just the one you were thinking of. When a read-only rule and a write rule share a pool, they quietly share each other's access. I keep one pool per kind of privilege for that reason, and one registry repository per source of configuration, because the registry grants access per repository: with a shared one, one project's CI could overwrite another's manifests. Other clouds draw these lines in different places. The habit that carries over is to keep reading and writing in separate trust rules, and to test from the reading side that it cannot write.
+
+That last part is the same lesson as with the image pulls. A rule that lets the right workflow in proves half of what you need. The other half is a workflow it should refuse, and watching it be refused.
 
 # The one key I kept
 
