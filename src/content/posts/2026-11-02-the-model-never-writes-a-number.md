@@ -1,8 +1,8 @@
 ---
-title: "The model never writes a number, part 1: harnessing and localising LLM output"
+title: "The model never writes a number, part 1: questions the data could not answer"
 date: 2026-11-02
-summary: "DRAFT — I let an LLM write a daily summary of my investment portfolio. It read well and was wrong in five different ways. The fix: code decides the facts and how they are formatted, the model decides only the words."
-tags: [llm, go, localisation]
+summary: "DRAFT — I let an LLM write a daily summary of my investment portfolio. It read well, and was wrong in ways I could not see by reading it. Part one: a missing value shown as zero, a sale reported as a crash, and why neither was the model's fault."
+tags: [llm, go]
 cover: /img/posts/model-never-writes-a-number/cover.png
 coverAlt: "Isometric illustration on a dark navy grid. On the left, a machine with brass gears behind glass takes in a stack of dark blocks and sets out a row of glowing teal tiles. In the centre, a glowing orb shines a beam onto an unrolled scroll of wavy lines with empty slots outlined in orange. On the right, a phone and a monitor show the same kind of page with teal tiles in the slots."
 draft: false
@@ -30,7 +30,9 @@ I have a small app that watches my brokerage account. Every few minutes it recor
 
 The first summaries were a pleasure to read. Calm, specific, in the tone of a newsletter written for one reader. They were also wrong, in several different ways, and I could not tell by reading them. One of them described a holding I had partly sold as having crashed.
 
-This post is about how that got fixed, in the order things broke. Each fix took a job away from the model and gave it to code, until the model was left with one: choosing the words. It no longer writes a single number. Code works out every figure, and formats it the way the reader writes numbers. So far that reader is me, and I write them the Dutch way. A second part, out on DRAFT-DATE, is about running those prompts once they are in production.
+This series is about how that got fixed, in the order things broke. Each fix took a job away from the model and gave it to code, until the model was left with one: choosing the words. It no longer writes a single number.
+
+This first part is about the failures that came from what the model was given: a missing value shown as zero, and a sale that looked like a crash. Part two, out on 9 November, is about how the model stopped writing numbers at all, so that code formats every figure the way the reader writes them. So far that reader is me, and I write them the Dutch way. Part three is about running these prompts once they are in production.
 
 # Version one: hand it the data and ask nicely
 
@@ -141,243 +143,10 @@ The same shape turned up once more, smaller. The model reasoned about idle cash 
 
 That one is only partly fixed. A deposit or a withdrawal still changes the total value, and at portfolio level I still cannot tell it apart from the market moving. When a holding changed size, the summary now says that part of the change was trading. A deposit with nothing traded would still read as a gain. I know where the data for that is, and I have not done it yet.
 
-# Numbers in a style of their own
+# What these failures have in common
 
-Around the same time, the dashboard learned to write amounts the way I do: a point between thousands, a comma before the cents. The summary shown right next to it did not. The dashboard said `52.418,37` and the paragraph beside it said `52418.37 EUR`.
+None of them was a hallucination in the usual sense. Each time, the model gave a sensible answer to the question its input actually asked: a zero is a zero, and a smaller value than yesterday is a fall. The mistakes were in my data and in my question. The model wrote them up so well that I did not notice.
 
-That was not even one consistent style. The model re-typed every figure it was given, in whatever notation it picked that day. One evening it wrote `52,418.37 EUR` and "0.35 percent". The next it wrote `52201.90 EUR`, and a few days later "0.12%". Dutch notation never came up, because nothing told it which notation I read.
+The fixes had a common shape too. Something the model had been left to infer, code now works out and states: unknown is unknown, a sale is a sale, money that has not settled is named as such. And each of those could then be tested, which a prompt cannot.
 
-The style was the visible part. The worse part was that some figures were never in the prompt at all. The headline percentage, and each holding's share of the portfolio, were left to the model to work out, and it worked them out in prose. Twice it described a holding of just under half the portfolio as "more than half". Nobody checks "more than half" against a calculator. It reads like a fact.
-
-The obvious fix is one more line in the prompt: write numbers the Dutch way. I did not add it, for three reasons.
-
-- **The model would still be doing the arithmetic.** A wrong share written with the right separators is still wrong.
-- **The text would be tied to one notation.** A summary is written once, stored, and shown again later. Change the setting, and every summary written before the change keeps the old notation.
-- **Nothing could check it.** A test can assert what code returns. It cannot assert which notation a model will choose tomorrow.
-
-This was the sale-as-a-crash problem again, in a smaller form. The model had been given two jobs, choosing the words and handling the numbers, and it was good at only one of them. The previous fix moved the arithmetic out of the prompt. The next step was to move the numbers out of the reply.
-
-# The model writes names, not numbers
-
-The split I ended up with: code decides *what* the figures are and *how* they look, and the model decides only the words around them.
-
-1. Code works out every figure the text may state, including the ones the model used to work out itself, such as the headline percentage and each holding's share. Each figure gets a name.
-2. The prompt lists those figures by name. The model writes the name in braces, `{total_today}`, and never the digits.
-3. The reply is stored as written, placeholders and all, together with the named values. The stored text does not belong to any notation.
-4. Whatever shows the summary, the dashboard or the notification on my phone, fills the placeholders in when it is shown, in the reader's notation, with the same formatting code as the rest of the page.
-
-The prompt still shows the model each value, next to its name. It needs them: it cannot choose between "rose" and "fell", or between "slightly" and "sharply", without knowing the size of the move. It is told to write the name instead of the value:
-
-```text
-Every figure you may state is listed below as a placeholder in braces,
-followed by its value in parentheses. Write the placeholder exactly as
-shown, braces included, and never the value.
-Never write a number yourself: nothing you worked out, such as a
-difference, a total or a share.
-
-- Total value: {total_today} (52418.37 EUR)
-- Change: {change} (431.35 EUR), {change_pct} (0.83%)
-```
-
-A reply now looks like "Your portfolio rose by {change} ({change_pct}) to {total_today}", and I read "rose by 431,35 EUR (0,83%) to 52.418,37 EUR". With the setting on English, the same stored sentence reads `52,418.37 EUR`.
-
-<figure class="d2-diagram" role="img" aria-label="Sequence between four parts: app code, the model, the database and the screen. 1: the app sends the model a figure by name with its value, {total_today} (52418.37 EUR). 2: the model replies with the name, rose to {total_today}. 3: the app checks the reply for stray numbers. 4: the app stores the text together with the figures. 5: the screen opens the summary. 6: the app returns the sentence filled in, in the reader's notation: rose to 52.418,37 EUR.">
-  <img src="/img/diagrams/model-never-writes-a-number-flow.svg" alt="" />
-  <figcaption>The model sees every value but writes only names. Digits appear when the text is shown, in the reader's notation.</figcaption>
-</figure>
-
-One detail is easy to get wrong: every figure renders without a sign. Render a loss as a negative number and you get "fell by -9,40 EUR": the model wrote the direction, and the number writes it again. Direction is the job of the prose. So the stored value keeps its sign, because the record should say what happened, and the rendered value is always a magnitude. The prompt says so, because the model can only pick the right verb if it knows the sign will not be there to do it.
-
-The rendering code is small enough to show nearly whole. Trimmed:
-
-```go
-type Figure struct {
-	Kind     Kind    // Money, Percent or Quantity
-	Value    float64 // keeps its sign; always renders as a magnitude
-	Currency string
-}
-
-var placeholder = regexp.MustCompile(`\{([a-z_]+(?::[A-Za-z0-9._-]+)?)\}`)
-
-// Render fills each {name} in the reader's notation. A name with no
-// figure is left as written: shown is more honest than guessed.
-func Render(text string, figs map[string]Figure, f Formatter) string {
-	return placeholder.ReplaceAllStringFunc(text, func(m string) string {
-		fig, ok := figs[m[1:len(m)-1]]
-		if !ok {
-			return m
-		}
-		return f.Format(fig.Kind, math.Abs(fig.Value), fig.Currency)
-	})
-}
-```
-
-The optional part after a colon names a figure per holding, such as `{move:ACME}`. `Formatter` is whatever already formats numbers for the reader in the rest of your app. Using that one, not a second copy, means the prose and the table beside it cannot disagree. In my case that meant moving the formatting out of the web layer, where it was tied to the incoming request, because the phone notification is built without one.
-
-When this fails, you can see it. A name the model made up, or a figure that went missing, shows up in the text as `{change}`, in braces. That is ugly, but you notice it, which is more than you could say for "more than half". A value that is not a finite number, the result of dividing by zero for example, is never stored as a figure. It would render as `NaN`, and a figure that does not exist is what the word "unknown" in the prompt is for. Summaries written before any of this have no figures and render as they were stored.
-
-Storing the text without its notation had a side effect I like. When I change the setting, summaries written before the change switch notation too. I watched one stored summary render as `2,500.00` and then, after a reload, as `2.500,00`.
-
-That covers the numbers from my own data. The news explanations quote numbers code cannot know in advance: "crude fell 3.6%", "a target of 68 dollars". For those, the model writes a *literal*: the number inside the placeholder, as `{=3.6%}` or `{=68 USD}`. The notation inside the braces is fixed and strict: a dot for decimals, no grouping, then optionally a scale word such as "billion", then a percent sign or a currency code. That way the value can be read back without guessing whose notation it was written in. It renders per reader like everything else, and keeps the precision of the source: 6% does not become 6.00%.
-
-This still relies on the model following the rule. The prompt says "never write a number". Nothing so far makes sure it doesn't.
-
-# Trust, but check every reply
-
-So every reply is checked before it is stored. It can break the rule in three ways: a number written as digits, a name in braces that is not on the list, or a literal that does not follow the strict notation.
-
-What counts as "a number written as digits" is deliberately narrow: anything with a decimal point or thousands separator, or any number next to a currency or a percent sign. A plain whole number passes. News headlines are full of digits that are neither mine nor figures, such as "Q2 earnings" or "S&P 500", and a check that fired on every summary that mentions the news would soon be ignored. The price is that a stray "12" would get through. Placeholders and literals are removed before the scan, so the digits inside `{=3.6%}` do not count against it.
-
-When a reply breaks the rule, the app asks once more. The retry continues the conversation: the first reply goes back to the model as its own, followed by a message that quotes each violation, such as `"27.73 EUR" is a number you wrote yourself`, and asks for the whole text again. Quoting the number with its currency makes a clearer instruction than the bare digits would.
-
-What happens next, in outline:
-
-```go
-first := generate(prompt)
-v1 := Validate(first, figs)
-if len(v1) == 0 {
-	return first, "clean"
-}
-second, err := generate(prompt, first, v1) // first reply + violations named
-if err != nil {
-	return first, "retry_failed"
-}
-v2 := Validate(second, figs)
-switch {
-case len(v2) == 0:
-	return second, "retried_clean"
-case len(v2) > len(v1):
-	return first, "retried_dirty"
-default:
-	return second, "retried_dirty"
-}
-```
-
-There is no third attempt, and no failing the whole report. If the retry is no better, the app keeps whichever reply breaks the rule less, and sends it. A summary with one stray number in it beats no summary. The outcome is stored with every summary and counted in a metric, so a rule that starts slipping shows up as a trend, not as a surprise in one notification.
-
-What the check proves is narrow, and that is the point: every number I read was computed by code and formatted by code. It does not prove the words are right. "Fell" next to a figure that rose would pass. The prompt and the sign rule from the previous section carry that part.
-
-How often it fires, against the real model: the summary test runs two real days of my own data through it, three times each. All six replies were clean on the first attempt. The news explanations were tested on the four articles with the most numbers in them. Once, the model wrote a literal with a sign in it, `{=-2.7%}`, which the strict notation rejects; the retry fixed it. After the prompt said explicitly that literals carry no sign, eight replies out of eight were clean on the first attempt.
-
-Those are small samples. They say the rule is easy for the model to keep, not that it always will be. The retry is a seatbelt, not the mechanism. Without it, the failure is the one this post started with: digits in the model's own style, sent to my phone, unnoticed, because they read fine.
-
-# Three smaller lessons
-
-The app also reads the news. When an article mentions one of my holdings, a second prompt decides whether the article is actually about it. If I held Apple, a story about the apple harvest would mention it without being about it. It writes a short reason for each decision, and for the articles it keeps, a sentence on what the news means for my portfolio. Testing that prompt against the real model taught me three more things.
-
-**Give a model an example phrase and it will copy it.** The field for the reason offered three sample phrasings in brackets. Three of five rejected articles came back with the same sentence, word for word one of the samples: "the matched word is incidental". The decisions were right. The reasons were useless, and the reason is the one field that has to say something the decision does not: what the article was about instead. The fix removed the samples and asked for the article's subject, with one example so specific that copying it would be obviously wrong. The reasons came back distinct ("the harvest of the fruit 'apple'", "ECB monetary policy and inflation"), with the decisions unchanged. My first draft of that fix quoted the bad phrase as a counter-example, "do not write …", which handed it over all the same. A test caught it: it asserts that the prompt offers no phrase to copy. It does not assert particular wording, because wording is a judgement call and the absence of the phrase is not.
-
-**"Where it matters" is a question you are handing over.** The sentence on what the news means was supposed to say how much of my portfolio the holding is, because that is the only number that tells me how much of my money the news is about. The prompt asked for the holding's details "where they matter", with the share as an example. Four answers in five used it. The fifth said something like "positive for your holding of 120 shares, worth 4,800 EUR": true, and nothing I did not already know. If the answer to "does it matter here?" is always yes, do not ask. The next version required the share, exactly as given and not rounded, since "about 8%" is a different claim from 8.3%. Six runs in a row then stated it, each in slightly different words, which is what quoting a figure looks like, as opposed to copying a sentence. Today that share is a placeholder like the rest.
-
-That gap got through for a dull reason. The test against the real model did check for the share, but it reported a missing one as a log line, not a failure. A warning nobody reads is not a check. It is an assertion now.
-
-**What the model sees, it uses.** One weekend, on my test setup, the only thing that moved was a currency position. That was enough to trigger a summary, which then retold every holding and the cash share, all unchanged, as every summary had. The prompt listed them all, so the model talked about them all. The fix was in the input rather than in the wording. The prompt now lists only holdings that moved: price changed, size changed, opened or closed. The rest are reduced to a count. Cash appears only when the balance changed, and the third paragraph is written only when there is something new to say.
-
-<!--
-OUTLINE — part 1 (journey: what was tried, what failed, what replaced it)
-
-0. Opening (~150 words)
-   - The app in two sentences: a small self-hosted app that watches my
-     brokerage account and sends one push notification in the evening, a
-     few paragraphs on what moved.
-   - Hook: the first summaries read well, and were wrong in ways I could not
-     see by reading them. One reported a sale as a crash.
-   - Promise: the journey, the failures in order, and where it ended up:
-     code decides the facts and their format, the model decides the words.
-
-1. Version one: hand it the data and ask nicely
-   - Snapshots of today and yesterday rendered into a prompt, "write three
-     paragraphs". It sounded like a financial newsletter. That was the problem:
-     fluent text gets read as checked text.
-
-2. Failure: a missing value is not zero
-   - A field the broker did not return was rendered as 0.00. The model
-     concluded the portfolio had lost most of its value and cash was 100% of it.
-   - Fix: missing renders as "unknown", and the prompt says what unknown means
-     (do not compute with it, do not assume zero). Before/after quote, invented
-     numbers.
-   - The sting: months later, a field that was zero in every stored row, marked
-     as present. The "unknown" guard never fired, because the data did not
-     claim to be missing. It was the right answer to the wrong question (a
-     margin figure on an account without margin). Lesson: the model trusts
-     your zeros more than you do.
-
-3. Failure: a sale reported as a crash
-   - Sold most of one holding; the summary said it had fallen sharply.
-   - Not a hallucination: today's positions had a quantity, yesterday's only a
-     value. With that input, a sale and a price fall are the same thing. The
-     model was asked a question its data could not answer.
-   - What I nearly did: add the quantity to yesterday too. Rejected, because
-     the model would still be doing arithmetic on raw figures.
-   - What I did: compute the movement in code. Market move is the quantity
-     actually held times the price move; value change is kept separately;
-     opened and closed positions are explicit entries; ranking in one
-     currency (it had been comparing dollars to euros as raw numbers).
-     The prompt narrates a computed result. And code is unit-testable;
-     a prompt is not.
-   - Same pattern, smaller: cash share derived by subtracting positions from
-     the total, while sale proceeds sat in neither. Fix: state the unsettled
-     amount explicitly. Honest bit: deposits and withdrawals still cannot be
-     told apart from market movement. Mitigated, not fixed.
-
-4. Failure: numbers in a style of its own
-   - Same amount written three ways on three days, two percentage styles in
-     one paragraph, never in the reader's locale (I read Dutch notation).
-   - Worse: it did sums of its own. A holding just under half the portfolio
-     was described as "more than half".
-   - Tried first: more rules in the prompt ("never contradict the figure").
-     It helps; it is a request, not a guarantee.
-
-5. The fix: the model writes names, not numbers
-   - Split who decides what from who decides how:
-     code computes every figure the text may state and names it;
-     the model writes {total_today}, never digits;
-     the text is stored with the placeholders plus the named values, so it
-     is locale-neutral;
-     every reader surface (dashboard, push notification) fills them in that
-     reader's locale with the same formatting code as the rest of the UI.
-   - Detail that matters: figures render without a sign, direction is the
-     prose's job. A signed render gives "fell by -133". So the model must
-     know a placeholder renders as a magnitude.
-   - Numbers the code cannot know in advance (a news article saying "crude
-     fell 3.6%") are written as literals in one fixed notation, {=3.6%}, and
-     formatted per reader like the rest.
-   - A side effect: switching your locale re-renders summaries written
-     before the switch.
-   - Short Go snippet: the Figure type and the render step. Reusable, trimmed.
-   - DIAGRAM: sequence — snapshot → code computes named figures → prompt →
-     model → check (retry once) → store locale-neutral → render per reader
-     (dashboard in nl, push in en).
-
-6. The harness: trust, but check every reply
-   - Every reply is scanned for stray numbers. One violation: retry once,
-     naming the violations. Still dirty: keep whichever reply is less bad,
-     and record that it happened. The outcome is stored on every summary,
-     so I can see per prompt how often the contract holds.
-   - Result against the real model: all replies clean on the first attempt
-     in the live test runs; the retry is a seatbelt, not the mechanism.
-     (Check exact counts before stating them.)
-   - What fails if the check is missing: digits in the model's own style
-     ship to the reader, unnoticed, because they read fine.
-
-7. Two smaller lessons from the same harness
-   - Give a model an example phrase and it copies it. The news filter gave
-     three sample rejection reasons; three of five rejections came back with
-     the same sample sentence. The verdicts were right, the audit trail was
-     useless. Fix: no copyable example, ask for the subject instead.
-   - "Mention it where it matters" is a judgement handed to the model. If the
-     answer is always "yes", require it.
-   - What the model sees, it uses: summaries retold unchanged holdings every
-     day because the prompt listed them. Fix by changing the input, not by
-     adding "don't mention".
-
-8. Closing: where the line sits
-   - Code: facts, arithmetic, units, format, locale. Model: selection,
-     emphasis, wording.
-   - Where this does not fit (free-form chat about numbers the code cannot
-     precompute) and what I'd do there.
-   - Part 2 (out on <date>, plain text, no link): running prompts like
-     deployments. Versioned prompts, re-judging old output when a prompt
-     changes, tests against the real model, replaying past days, and the
-     morning every LLM call failed while the app reported healthy.
--->
+That left the model choosing which facts to mention and how to say them, plus one job it should never have had: typing the numbers. It did that in a style of its own, and now and then it did a sum of its own on the way. Part two, out on 9 November, takes that job away as well. The model writes names in place of numbers, code fills them in the way the reader writes them, and every reply is checked before it is sent.
