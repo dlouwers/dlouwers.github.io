@@ -61,6 +61,45 @@ The model was Google's Gemini Flash, the fast and cheap tier. This post is about
 
 That was the problem. A table of numbers invites you to check it, and a well-written paragraph invites you to nod along. Every figure the model needed was in the prompt, so I assumed that repeating them back was the easy part. Nothing compared the reply with the data. Whatever came back was stored and sent to my phone as it was.
 
+# A missing value is not zero
+
+My broker does not always report a price. Outside market hours, or for some kinds of asset, the value of a position simply is not there, and the database stores it as missing. The dashboard showed a dash for those fields. The prompt showed `0.00`.
+
+Both read the same row. The difference was one line of Go. Go's database types keep "missing" as a flag next to the number, and the code that wrote the prompt read the number without checking the flag. A missing float is zero. So the page said "I don't know" and the prompt said "nothing", about the same position, on the same day.
+
+The model cannot tell those apart, and it has no reason to try. With test data built to hit the worst case, a known total yesterday and a missing total today, the summary opened like this (numbers invented here, wording as it came back):
+
+> Your portfolio value decreased by 41,300.00 EUR, or 79.40%. Your cash balance of 2,104.90 EUR now represents 100% of your total portfolio value.
+
+Every step of that is correct arithmetic on what it was given.
+
+The fix was to keep "missing" missing all the way into the prompt, and to tell the model what it means:
+
+```go
+// money renders a nullable amount for the prompt. Missing is "unknown",
+// never 0.00: a zero is a claim the model will build on.
+func money(v sql.NullFloat64, currency string) string {
+	if !v.Valid {
+		return "unknown"
+	}
+	return fmt.Sprintf("%.2f %s", v.Float64, currency)
+}
+```
+
+```text
+Some values are "unknown": the broker did not report them. Do not compute
+a change against an unknown value, do not treat it as zero, and do not
+conclude that a position is worthless.
+```
+
+The same test case then produced: "The overall change cannot be determined today because the current total value is not available." Less impressive, and true.
+
+Months later the same mistake came back in a different form. The total unrealised profit or loss, the gain on paper across all positions, was zero in every stored snapshot since the first day, and stored as a present value. The "unknown" guard never fired, because nothing claimed to be missing. The code read the broker's *margin* figure, which measures borrowed money, on an account that borrows none. Zero was the right answer to the wrong question.
+
+That one never reached a summary, by luck: the prompt only used each position's own figure, which was right. But it sat in the database for months as a confident zero, waiting for the first chart or alert rule to trust it. The fix was to add the total up from the positions, where the right figure had been all along. If any position's figure is unknown, the total is unknown. An empty list of positions is unknown too, not zero: a flat account and a broker response that came back half empty look the same, and claiming "no gains or losses" when nothing was reported is the expensive mistake.
+
+What I took from this: the model trusts your zeros more than you do. Every value in a prompt is a claim, and the place to decide whether you know something is where the data comes in, not where the prompt is written.
+
 <!--
 OUTLINE — part 1 (journey: what was tried, what failed, what replaced it)
 
