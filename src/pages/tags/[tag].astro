@@ -1,7 +1,7 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import PostCard from '../../components/PostCard.astro';
-import { getPublishedPosts } from '../../lib/posts';
+import { byDateDesc, getPublishedPosts } from '../../lib/posts';
 
 export async function getStaticPaths() {
   const posts = await getPublishedPosts();
@@ -17,7 +17,7 @@ export async function getStaticPaths() {
     params: { tag },
     props: {
       tag,
-      posts: list.sort((a, b) => +b.data.date - +a.data.date),
+      posts: list.sort(byDateDesc),
     },
   }));
 }

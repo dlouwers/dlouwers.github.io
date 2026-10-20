@@ -42,9 +42,13 @@ export function isPublished(post: Post, now: Date = NOW): boolean {
   return post.data.date.getTime() <= now.getTime();
 }
 
-/** Newest first — the order every listing on the site uses. */
+/**
+ * Newest first — the order every listing on the site uses. Posts on the same
+ * date keep their file-name order, so a series published in one day reads
+ * part 1, part 2 rather than whatever order the loader happened to return.
+ */
 export function byDateDesc(a: Post, b: Post): number {
-  return +b.data.date - +a.data.date;
+  return +b.data.date - +a.data.date || a.id.localeCompare(b.id);
 }
 
 /**
