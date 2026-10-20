@@ -1,28 +1,12 @@
 ---
 title: "The model never writes a number, part 2: harnessing and localising LLM output"
 date: 2026-11-09
-summary: "DRAFT — Part two of letting an LLM write about my portfolio. The model writes names instead of numbers, code fills them in the way the reader writes them, and every reply is checked before it is stored."
+summary: "Part two of letting an LLM write about my portfolio. The model writes names instead of numbers, code fills them in the way the reader writes them, and every reply is checked before it is stored."
 tags: [llm, go, localisation]
 cover: /img/posts/model-never-writes-a-number/cover-part-2.png
 coverAlt: "Isometric illustration of three floating platforms against a dark starry sky, linked by glowing teal and orange traces. On the left, a glowing amber orb shines onto a scroll on a desk; along its edge are empty slots outlined in orange, each with a small blank tag. In the centre, the scroll rides a conveyor through an arched gate with a teal light curtain, a small coral shard drops from it into a glowing tray, and an orange arrow curves from the gate back to the desk. On the right, a phone and a monitor show the scroll with its slots filled by teal tiles, stacked on the phone and in a row on the monitor."
 draft: false
 ---
-
-<!--
-PROSE RULES (remove before merge)
-- Reader: a backend developer who has put, or is about to put, LLM-written
-  text next to real data. Knows what an LLM and a prompt are. Does NOT know
-  investor-buddy, Saxo, Eino, the issue tracker, or this author's setup.
-- Explain every term the first time, in one plain sentence, or drop it.
-- No issue numbers, file names, prompt version ids, or resource names.
-- Every number in the post is invented. No tickers, no amounts, no weights,
-  no account details from the real portfolio.
-- For each fix: what it proves, and what happens when it fails.
-- Vendor-neutral: Gemini named once, next to equivalents.
-- The author is the app's only user. No customers, users or testers;
-  "the reader" of a summary is the author. Per-locale rendering is about
-  what the design allows, not about an audience it has.
--->
 
 [Part one](/posts/2026-11-02-the-model-never-writes-a-number/) was about a daily summary of my investment portfolio, written by a language model and sent to my phone. It read well and was wrong in ways I could not see: a missing value shown to the model as zero, a partial sale described as a crash. Both times, the model gave a sensible answer to a question its data could not answer. The fixes moved the facts into code. Unknown stays unknown, and each holding's movement is worked out before the prompt is written, so the model describes a result instead of solving a puzzle.
 
@@ -168,4 +152,4 @@ Every fix in both parts was the same move. Find something the model was inferrin
 
 This works because the numbers in a daily summary are knowable in advance: a fixed set of figures from a fixed set of data. It does not fit a free conversation about numbers nobody worked out beforehand, such as "what if I sold half of this?". There I would let the model ask rather than answer: give it a tool that does the sum in code and returns a named figure, and keep the same check on the reply. The next feature I plan, setting up alerts by chatting with the app, follows the same idea: the model can change a rule only through a fixed set of actions, and nothing changes until I confirm a preview. That is a plan, not a result. I have not built it yet.
 
-Part three, out on DRAFT-DATE, is about running these prompts once they are live: versioning prompts, re-judging old output when a prompt changes, testing against the real model, replaying past days, and the morning every call to the model failed while the app reported itself healthy.
+Part three, out on 16 November, is about running these prompts once they are live: versioning prompts, re-judging old output when a prompt changes, testing against the real model, replaying past days, and the morning every call to the model failed while the app reported itself healthy.

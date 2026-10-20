@@ -1,28 +1,12 @@
 ---
 title: "The model never writes a number, part 1: questions the data could not answer"
 date: 2026-11-02
-summary: "DRAFT — I let an LLM write a daily summary of my investment portfolio. It read well, and was wrong in ways I could not see by reading it. Part one: a missing value shown as zero, a sale reported as a crash, and why neither was the model's fault."
+summary: "I let an LLM write a daily summary of my investment portfolio. It read well, and was wrong in ways I could not see by reading it. Part one: a missing value shown as zero, a sale reported as a crash, and why neither was the model's fault."
 tags: [llm, go]
 cover: /img/posts/model-never-writes-a-number/cover.png
 coverAlt: "Isometric illustration on a dark navy grid. On the left, a machine with brass gears behind glass takes in a stack of dark blocks and sets out a row of glowing teal tiles. In the centre, a glowing orb shines a beam onto an unrolled scroll of wavy lines with empty slots outlined in orange. On the right, a phone and a monitor show the same kind of page with teal tiles in the slots."
 draft: false
 ---
-
-<!--
-PROSE RULES (remove before merge)
-- Reader: a backend developer who has put, or is about to put, LLM-written
-  text next to real data. Knows what an LLM and a prompt are. Does NOT know
-  investor-buddy, Saxo, Eino, the issue tracker, or this author's setup.
-- Explain every term the first time, in one plain sentence, or drop it.
-- No issue numbers, file names, prompt version ids, or resource names.
-- Every number in the post is invented. No tickers, no amounts, no weights,
-  no account details from the real portfolio.
-- For each fix: what it proves, and what happens when it fails.
-- Vendor-neutral: Gemini named once, next to equivalents.
-- The author is the app's only user. No customers, users or testers;
-  "the reader" of a summary is the author. Per-locale rendering is about
-  what the design allows, not about an audience it has.
--->
 
 # A summary that read well
 
