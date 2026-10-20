@@ -36,9 +36,6 @@ RULES FOR THE PROSE
 - Each mechanism: what proves what to whom, and what happens when that proof
   is missing. The failure case is what makes it believable.
 
-OPEN QUESTIONS FOR THE AUTHOR
-- Diagram captions and aria-labels below are drafts.
-
 SOURCES FOR THE VENDOR CLAIMS (checked 2026-10-20)
 - Kubelet ServiceAccount tokens for credential providers, alpha 1.33, beta
   and on by default 1.34:
@@ -94,9 +91,9 @@ A Kubernetes cluster is the other. Every pod runs as a ServiceAccount, and the c
 
 Neither badge opens anything by itself. The missing piece is a door that accepts them, and that is what workload identity federation is. You tell a cloud provider: accept tokens signed by GitHub, but only from this repository, this branch and this workflow file. Or: accept tokens signed by my cluster, but only for this ServiceAccount. A workload presents its token, the provider checks the signature and the conditions, and hands back a credential of its own that lasts about an hour. AWS, Azure and Google all offer this, under different names.
 
-<figure class="d2-diagram" role="img" aria-label="DRAFT: A CI workflow on GitHub, Flux in the cluster and an app pod in the cluster each present a signed statement of who they are to a token exchange at a cloud provider. The workflow's is signed by GitHub, the other two by the cluster. The exchange grants an hour of access to the registry.">
+<figure class="d2-diagram" role="img" aria-label="A CI workflow on GitHub, Flux in the cluster and an app pod in the cluster each present a signed statement of who they are to a token exchange at a cloud provider. The workflow's is signed by GitHub, the other two by the cluster. The exchange grants an hour of access to the registry.">
   <img src="/img/diagrams/secret-free-overview.svg" alt="" />
-  <figcaption>DRAFT: Nobody holds a key. Everything that needs access proves who it is, and gets an hour.</figcaption>
+  <figcaption>Nobody holds a key. Everything that needs access proves who it is, and gets an hour.</figcaption>
 </figure>
 
 Three things change when access works this way. Nothing long-lived is stored anywhere, so there is nothing to copy, and nothing that is still useful to anyone next week. Access runs out by itself, so taking it away means changing a rule, not hunting down copies. And the question "who can get in?" has an answer you can read: a short condition, kept with the rest of the configuration, instead of a list of everyone who might once have been handed the key.
@@ -133,9 +130,9 @@ What those plugins used to lack was any idea of which pod they were pulling for.
 
 That changed recently. The kubelet can now hand the plugin a token for the pod's own ServiceAccount, minted for this purpose and addressed to the cloud. The plugin presents it at the cloud's token exchange, exactly as described earlier, and gets back a registry credential that belongs to that ServiceAccount and to nothing else. The pull happens as the pod.
 
-<figure class="d2-diagram" role="img" aria-label="DRAFT: Sequence. The kubelet sees that pod my-app needs an image from the registry. It asks the credential provider plugin for credentials, handing it a token for ServiceAccount my-app. The plugin swaps that token at the cloud token exchange for a registry token valid for one hour and returns it. The kubelet pulls the image as my-app.">
+<figure class="d2-diagram" role="img" aria-label="Sequence. The kubelet sees that pod my-app needs an image from the registry. It asks the credential provider plugin for credentials, handing it a token for ServiceAccount my-app. The plugin swaps that token at the cloud token exchange for a registry token valid for one hour and returns it. The kubelet pulls the image as my-app.">
   <img src="/img/diagrams/secret-free-image-pull.svg" alt="" />
-  <figcaption>DRAFT: The pull happens as the pod's own identity. There is no pull secret, and a ServiceAccount the cloud was never told to trust gets nothing.</figcaption>
+  <figcaption>The pull happens as the pod's own identity. There is no pull secret, and a ServiceAccount the cloud was never told to trust gets nothing.</figcaption>
 </figure>
 
 The kubelet side is plain Kubernetes and the same on every cloud. It is a configuration file that the kubelet reads at startup, and trimmed to what matters it looks like this:
@@ -168,9 +165,9 @@ The second is that a pull that works does not prove much. It might work because 
 
 # Letting Flux read its configuration without GitHub
 
-<figure class="d2-diagram" role="img" aria-label="DRAFT: Sequence. After a merge, the CI workflow on GitHub pushes the configuration to the cloud registry as the workflow. Every minute, Flux in the cluster asks the registry for anything new, as its own ServiceAccount, receives the new artifact and applies it to the cluster.">
+<figure class="d2-diagram" role="img" aria-label="Sequence. After a merge, the CI workflow on GitHub pushes the configuration to the cloud registry as the workflow. Every minute, Flux in the cluster asks the registry for anything new, as its own ServiceAccount, receives the new artifact and applies it to the cluster.">
   <img src="/img/diagrams/secret-free-flux-oci.svg" alt="" />
-  <figcaption>DRAFT: The cluster's configuration travels through the same registry as its images. Flux never talks to GitHub.</figcaption>
+  <figcaption>The cluster's configuration travels through the same registry as its images. Flux never talks to GitHub.</figcaption>
 </figure>
 
 - Introduce Flux in a sentence: it keeps the cluster in line with configuration stored in git, by polling the repository and applying what changed.
