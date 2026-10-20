@@ -222,6 +222,45 @@ That covers the numbers from my own data. The news explanations quote numbers co
 
 This still relies on the model following the rule. The prompt says "never write a number". Nothing so far makes sure it doesn't.
 
+# Trust, but check every reply
+
+So every reply is checked before it is stored. It can break the rule in three ways: a number written as digits, a name in braces that is not on the list, or a literal that does not follow the strict notation.
+
+What counts as "a number written as digits" is deliberately narrow: anything with a decimal point or thousands separator, or any number next to a currency or a percent sign. A plain whole number passes. News headlines are full of digits that are neither mine nor figures, such as "Q2 earnings" or "S&P 500", and a check that fired on every summary that mentions the news would soon be ignored. The price is that a stray "12" would get through. Placeholders and literals are removed before the scan, so the digits inside `{=3.6%}` do not count against it.
+
+When a reply breaks the rule, the app asks once more. The retry continues the conversation: the first reply goes back to the model as its own, followed by a message that quotes each violation, such as `"27.73 EUR" is a number you wrote yourself`, and asks for the whole text again. Quoting the number with its currency makes a clearer instruction than the bare digits would.
+
+What happens next, in outline:
+
+```go
+first := generate(prompt)
+v1 := Validate(first, figs)
+if len(v1) == 0 {
+	return first, "clean"
+}
+second, err := generate(prompt, first, v1) // first reply + violations named
+if err != nil {
+	return first, "retry_failed"
+}
+v2 := Validate(second, figs)
+switch {
+case len(v2) == 0:
+	return second, "retried_clean"
+case len(v2) > len(v1):
+	return first, "retried_dirty"
+default:
+	return second, "retried_dirty"
+}
+```
+
+There is no third attempt, and no failing the whole report. If the retry is no better, the app keeps whichever reply breaks the rule less, and sends it. A summary with one stray number in it beats no summary. The outcome is stored with every summary and counted in a metric, so a rule that starts slipping shows up as a trend, not as a surprise in one notification.
+
+What the check proves is narrow, and that is the point: every number I read was computed by code and formatted by code. It does not prove the words are right. "Fell" next to a figure that rose would pass. The prompt and the sign rule from the previous section carry that part.
+
+How often it fires, against the real model: the summary test runs two real days of my own data through it, three times each. All six replies were clean on the first attempt. The news explanations were tested on the four articles with the most numbers in them. Once, the model wrote a literal with a sign in it, `{=-2.7%}`, which the strict notation rejects; the retry fixed it. After the prompt said explicitly that literals carry no sign, eight replies out of eight were clean on the first attempt.
+
+Those are small samples. They say the rule is easy for the model to keep, not that it always will be. The retry is a seatbelt, not the mechanism. Without it, the failure is the one this post started with: digits in the model's own style, sent to my phone, unnoticed, because they read fine.
+
 <!--
 OUTLINE — part 1 (journey: what was tried, what failed, what replaced it)
 
