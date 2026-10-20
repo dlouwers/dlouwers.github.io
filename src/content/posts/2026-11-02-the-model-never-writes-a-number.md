@@ -19,6 +19,46 @@ PROSE RULES (remove before merge)
 - Vendor-neutral: Gemini named once, next to equivalents.
 -->
 
+# A summary that read well
+
+I have a small app that watches my brokerage account. Every few minutes it records what I hold and what it is worth, and once a day it sends a notification to my phone: a few paragraphs, written by a large language model, about what changed.
+
+The first summaries were a pleasure to read. Calm, specific, in the tone of a newsletter written for one reader. They were also wrong, in several different ways, and I could not tell by reading them. One of them described a holding I had partly sold as having crashed.
+
+This post is about how that got fixed, in the order things broke. Each fix took a job away from the model and gave it to code, until the model was left with one: choosing the words. It no longer writes a single number. Code works out every figure, and formats it for whoever is reading, in their own notation. A second part, out on DRAFT-DATE, is about running those prompts once they are in production.
+
+# Version one: hand it the data and ask nicely
+
+The first version did what most first versions do. It took two snapshots of the portfolio, today's and yesterday's, wrote them into the prompt as plain text, and asked for three paragraphs. Trimmed, and with invented numbers, the prompt looked like this:
+
+```text
+You are writing a brief daily update for the user about their own
+personal investment portfolio. Plain text, three paragraphs.
+
+Today's snapshot (2026-04-24):
+- Total value: 52418.37 EUR
+- Cash balance: 2104.90 EUR
+- ACME (Stock): qty 120, market value 9843.60 USD, unrealised P/L +612.40
+
+Previous snapshot (2026-04-23):
+- Total value: 51987.02 EUR
+- ACME: market value 9790.80 USD
+
+Write three paragraphs:
+1. Headline: the overall change in portfolio value since the previous
+   snapshot, as an amount and a percentage.
+2. Notable movers: up to three positions with the largest change in
+   market value or profit and loss.
+3. One concrete, factual observation about concentration, idle cash or
+   currency exposure. Do not give financial advice.
+```
+
+Look at what yesterday's lines carry, and what they leave out. That comes back later.
+
+The model was Google's Gemini Flash, the fast and cheap tier. This post is about what goes around the model, and none of it depends on which one you use. The replies were good. They picked the right holdings to talk about, put a sensible amount of weight on each, and read like someone had looked at my account and thought about it.
+
+That was the problem. A table of numbers invites you to check it, and a well-written paragraph invites you to nod along. Every figure the model needed was in the prompt, so I assumed that repeating them back was the easy part. Nothing compared the reply with the data. Whatever came back was stored and sent to my phone as it was.
+
 <!--
 OUTLINE — part 1 (journey: what was tried, what failed, what replaced it)
 
