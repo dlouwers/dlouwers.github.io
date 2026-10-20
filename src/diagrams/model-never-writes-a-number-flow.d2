@@ -1,0 +1,13 @@
+shape: sequence_diagram
+
+app: App code
+model: Model
+db: Database
+screen: Screen
+
+app -> model: "1. {total_today} (52418.37 EUR)"
+model -> app: "2. rose to {total_today}"
+app -> app: "3. check: no stray numbers"
+app -> db: "4. text + figures"
+screen -> app: "5. open summary"
+app -> screen: "6. rose to 52.418,37 EUR"

@@ -157,6 +157,71 @@ The obvious fix is one more line in the prompt: write numbers the Dutch way. I d
 
 This was the sale-as-a-crash problem again, in a smaller form. The model had been given two jobs, choosing the words and handling the numbers, and it was good at only one of them. The previous fix moved the arithmetic out of the prompt. The next step was to move the numbers out of the reply.
 
+# The model writes names, not numbers
+
+The split I ended up with: code decides *what* the figures are and *how* they look, and the model decides only the words around them.
+
+1. Code works out every figure the text may state, including the ones the model used to work out itself, such as the headline percentage and each holding's share. Each figure gets a name.
+2. The prompt lists those figures by name. The model writes the name in braces, `{total_today}`, and never the digits.
+3. The reply is stored as written, placeholders and all, together with the named values. The stored text does not belong to any notation.
+4. Whatever shows the summary, the dashboard or the notification on my phone, fills the placeholders in when it is shown, in the reader's notation, with the same formatting code as the rest of the page.
+
+The prompt still shows the model each value, next to its name. It needs them: it cannot choose between "rose" and "fell", or between "slightly" and "sharply", without knowing the size of the move. It is told to write the name instead of the value:
+
+```text
+Every figure you may state is listed below as a placeholder in braces,
+followed by its value in parentheses. Write the placeholder exactly as
+shown, braces included, and never the value.
+Never write a number yourself: nothing you worked out, such as a
+difference, a total or a share.
+
+- Total value: {total_today} (52418.37 EUR)
+- Change: {change} (431.35 EUR), {change_pct} (0.83%)
+```
+
+A reply now looks like "Your portfolio rose by {change} ({change_pct}) to {total_today}", and I read "rose by 431,35 EUR (0,83%) to 52.418,37 EUR". With the setting on English, the same stored sentence reads `52,418.37 EUR`.
+
+<figure class="d2-diagram" role="img" aria-label="Sequence between four parts: app code, the model, the database and the screen. 1: the app sends the model a figure by name with its value, {total_today} (52418.37 EUR). 2: the model replies with the name, rose to {total_today}. 3: the app checks the reply for stray numbers. 4: the app stores the text together with the figures. 5: the screen opens the summary. 6: the app returns the sentence filled in, in the reader's notation: rose to 52.418,37 EUR.">
+  <img src="/img/diagrams/model-never-writes-a-number-flow.svg" alt="" />
+  <figcaption>The model sees every value but writes only names. Digits appear when the text is shown, in the reader's notation.</figcaption>
+</figure>
+
+One detail is easy to get wrong: every figure renders without a sign. Render a loss as a negative number and you get "fell by -9,40 EUR": the model wrote the direction, and the number writes it again. Direction is the job of the prose. So the stored value keeps its sign, because the record should say what happened, and the rendered value is always a magnitude. The prompt says so, because the model can only pick the right verb if it knows the sign will not be there to do it.
+
+The rendering code is small enough to show nearly whole. Trimmed:
+
+```go
+type Figure struct {
+	Kind     Kind    // Money, Percent or Quantity
+	Value    float64 // keeps its sign; always renders as a magnitude
+	Currency string
+}
+
+var placeholder = regexp.MustCompile(`\{([a-z_]+(?::[A-Za-z0-9._-]+)?)\}`)
+
+// Render fills each {name} in the reader's notation. A name with no
+// figure is left as written: shown is more honest than guessed.
+func Render(text string, figs map[string]Figure, f Formatter) string {
+	return placeholder.ReplaceAllStringFunc(text, func(m string) string {
+		fig, ok := figs[m[1:len(m)-1]]
+		if !ok {
+			return m
+		}
+		return f.Format(fig.Kind, math.Abs(fig.Value), fig.Currency)
+	})
+}
+```
+
+The optional part after a colon names a figure per holding, such as `{move:ACME}`. `Formatter` is whatever already formats numbers for the reader in the rest of your app. Using that one, not a second copy, means the prose and the table beside it cannot disagree. In my case that meant moving the formatting out of the web layer, where it was tied to the incoming request, because the phone notification is built without one.
+
+When this fails, you can see it. A name the model made up, or a figure that went missing, shows up in the text as `{change}`, in braces. That is ugly, but you notice it, which is more than you could say for "more than half". A value that is not a finite number, the result of dividing by zero for example, is never stored as a figure. It would render as `NaN`, and a figure that does not exist is what the word "unknown" in the prompt is for. Summaries written before any of this have no figures and render as they were stored.
+
+Storing the text without its notation had a side effect I like. When I change the setting, summaries written before the change switch notation too. I watched one stored summary render as `2,500.00` and then, after a reload, as `2.500,00`.
+
+That covers the numbers from my own data. The news explanations quote numbers code cannot know in advance: "crude fell 3.6%", "a target of 68 dollars". For those, the model writes a *literal*: the number inside the placeholder, as `{=3.6%}` or `{=68 USD}`. The notation inside the braces is fixed and strict: a dot for decimals, no grouping, then optionally a scale word such as "billion", then a percent sign or a currency code. That way the value can be read back without guessing whose notation it was written in. It renders per reader like everything else, and keeps the precision of the source: 6% does not become 6.00%.
+
+This still relies on the model following the rule. The prompt says "never write a number". Nothing so far makes sure it doesn't.
+
 <!--
 OUTLINE — part 1 (journey: what was tried, what failed, what replaced it)
 
