@@ -155,6 +155,18 @@ Rebuilding the cluster from scratch has one step outside it. A new cluster has a
 
 # Wrapping up
 
-- Back to the list from part one: of the five long-lived keys, one remains, and nobody can read it.
-- The lesson, for the reader's own setup: replace a secret only with something you can test both ways — it lets the right thing in, and it keeps the wrong thing out. Without the second test you have not removed a credential, you have only stopped seeing it.
-- Pointers: the plugin, and, if written, follow-ups on application secrets and on review for a one-person cluster.
+Back to the list from the start of part one. There were five long-lived keys.
+
+- The token for pulling images is gone. Pods pull as their own ServiceAccount.
+- The key Flux used to read its configuration is gone. The configuration comes from the registry.
+- The key for writing version updates back is gone. Nothing writes to git any more.
+- The key copied into four places so builds could fetch a private library went the same way as the images, though I did not have room to show it. The library is now served from the same cloud's registry, which can host language packages as well as images, and every build fetches it with its own badge. That includes the bot that keeps dependencies up to date, which accepts a federated identity in its configuration.
+- And the key for publishing the package is still there, inside a service that only ever signs with it.
+
+None of them was replaced by another secret, and the thing to rotate is down to one key that can't be copied.
+
+If you take one thing from these posts for your own setup, let it be the test, not the mechanism. Replace a secret only with something you can check in both directions: it lets the right thing in, and it keeps the wrong thing out. The first check you will do anyway, because otherwise nothing works. The second is the one that tells you the new rule does anything at all. A pull that succeeds might be the identity at work, or a leftover credential, or a cached image. Until you have watched something be refused, you have not removed a credential. You have only stopped seeing it.
+
+The credential provider plugin I wrote for Google is at [gcp-wif-credential-provider](https://github.com/dlouwers/gcp-wif-credential-provider). On AWS or Azure you will not need it.
+
+What these posts left alone are the secrets applications hold for themselves: database passwords, API keys for other people's services. Those are still secrets, and they are a different post.
