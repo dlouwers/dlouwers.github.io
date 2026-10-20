@@ -8,65 +8,6 @@ coverAlt: "Isometric illustration of an archway of shipping containers. A glowin
 draft: false
 ---
 
-<!--
-OUTLINE, second version. Not prose yet.
-
-WHO THIS IS FOR
-Someone who runs Kubernetes at home or at work and uses GitHub Actions, and
-who has at some point pasted a token into a Secret and felt slightly bad
-about it. They know what a container registry, a ServiceAccount and a CI
-workflow are. They do NOT know cloud IAM, workload identity federation, or
-how the kubelet pulls images. Nothing in this post may assume they have
-seen my repository.
-
-Standalone post, not part of the homelab series.
-
-VENDOR-NEUTRAL
-The idea is the subject, not the cloud. Describe each mechanism in generic
-terms ("the cloud provider", "its registry", "its key management service")
-and mention that I happened to use Google Cloud once, in the registry
-section, alongside the AWS and Azure equivalents. Provider-specific syntax
-appears only where it is marked as one example of many.
-
-RULES FOR THE PROSE
-- Explain every term the first time it appears, in one plain sentence, or
-  do not use it. Terms that need introducing are listed per section below.
-- No issue numbers, no file names from my repository, no internal resource
-  names. Name things by their role ("the workflow that builds the image"),
-  not by what they are called in my setup.
-- Code only where the reader could reuse it, and short.
-- Each mechanism: what proves what to whom, and what happens when that proof
-  is missing. The failure case is what makes it believable.
-
-SOURCES FOR THE VENDOR CLAIMS (checked 2026-10-20)
-- Kubelet ServiceAccount tokens for credential providers, alpha 1.33, beta
-  and on by default 1.34:
-  https://kubernetes.io/blog/2025/09/03/kubernetes-v1-34-sa-tokens-image-pulls-beta/
-  https://kubernetes.io/docs/tasks/administer-cluster/kubelet-credential-provider
-- AWS issuer must be publicly reachable over HTTPS with a discovery document:
-  https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_providers_create_oidc.html
-- Entra (Azure) federates GitHub Actions and Kubernetes anywhere, and
-  validates tokens against the issuer's OIDC endpoint, downloading its keys:
-  https://learn.microsoft.com/en-us/entra/workload-id/workload-identity-federation
-  (It says the keys are downloaded from the endpoint; it does not say
-  "public" in so many words. Entra is a cloud service, so in practice it is.)
-- Google accepts an uploaded JWKS when the issuer is not public:
-  https://docs.cloud.google.com/iam/docs/workload-identity-federation-with-other-providers
-- Official plugins and the pod token, from their source code:
-  kubernetes/cloud-provider-aws cmd/ecr-credential-provider/main.go
-  (AssumeRoleWithWebIdentity, role from the eks.amazonaws.com/ecr-role-arn
-  ServiceAccount annotation); kubernetes-sigs/cloud-provider-azure
-  pkg/credentialprovider/azure_credentials.go (client assertion credential);
-  Google's auth-provider-gcp hardcodes the GKE fleet audience, per the
-  gcp-wif-credential-provider README.
-- Budgets: Google, disabling billing is DIY and not guaranteed:
-  https://docs.cloud.google.com/billing/docs/how-to/disable-billing-with-notifications
-  AWS Budgets Actions:
-  https://aws.amazon.com/about-aws/whats-new/2020/10/announcing-aws-budgets-actions/
-  Azure spending limit, not available for pay-as-you-go:
-  https://learn.microsoft.com/en-us/azure/cost-management-billing/manage/spending-limit
--->
-
 # Every homelab has a token in a Secret
 
 Sooner or later, a cluster needs to reach something private. An image you have not published, a repository it reads its configuration from, a library your build depends on. The quickest way through is always the same: generate a personal access token, paste it into a Kubernetes Secret or a CI secret, and move on. It works the first time, so it stays.
@@ -77,7 +18,7 @@ That day is where the cost shows. Rotating the token means finding every copy fi
 
 My home cluster had five of these. A token so the cluster could pull its own application images. A key that let it read its configuration from three repositories, and a second key that let it write version updates back. A key copied into four places so that builds could fetch a private library. And one more, for publishing a package. Each had been the quickest way through at the time.
 
-By the end, four of them were gone, and the fifth sits somewhere nobody can read it, me included. None of them was replaced by a different secret. This is the first of two posts about how that works. This one covers the idea, the choice of registry, and how images reach the cluster. [The second](/posts/2026-10-26-a-homelab-with-nothing-to-rotate-part-2/) covers the cluster's configuration, the conditions that decide who gets in, the one key that is left, and what happens when the cloud is down.
+By the end, four of them were gone, and the fifth sits somewhere nobody can read it, me included. None of them was replaced by a different secret. This is the first of two posts about how that works. This one covers the idea, the choice of registry, and how images reach the cluster. [The second](/posts/2026-10-19-a-homelab-with-nothing-to-rotate-part-2/) covers the cluster's configuration, the conditions that decide who gets in, the one key that is left, and what happens when the cloud is down.
 
 One boundary before going on. This is about how machines prove who they are to each other: the build system, the registry and the cluster. The passwords applications use for their own databases, and the keys they hold for other people's APIs, are still secrets, kept the way they were. That is a different problem, and a different post.
 
@@ -167,4 +108,4 @@ The second is that a pull that works does not prove much. It might work because 
 
 # Next: the configuration
 
-Images were the first thing the cluster had to fetch without a key. The second is its own configuration, which it used to read straight from GitHub, and GitHub accepts no badge. How that was solved, how to write the conditions that decide who gets in, and the one key I could not get rid of, are in [part two](/posts/2026-10-26-a-homelab-with-nothing-to-rotate-part-2/).
+Images were the first thing the cluster had to fetch without a key. The second is its own configuration, which it used to read straight from GitHub, and GitHub accepts no badge. How that was solved, how to write the conditions that decide who gets in, and the one key I could not get rid of, are in [part two](/posts/2026-10-19-a-homelab-with-nothing-to-rotate-part-2/).
