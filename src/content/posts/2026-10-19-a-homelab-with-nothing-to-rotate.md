@@ -38,8 +38,34 @@ RULES FOR THE PROSE
 
 OPEN QUESTIONS FOR THE AUTHOR
 - Diagram captions and aria-labels below are drafts.
-- Before writing the AWS and Azure equivalents, verify each against their
-  current documentation; they are named here from memory.
+
+SOURCES FOR THE VENDOR CLAIMS (checked 2026-10-20)
+- Kubelet ServiceAccount tokens for credential providers, alpha 1.33, beta
+  and on by default 1.34:
+  https://kubernetes.io/blog/2025/09/03/kubernetes-v1-34-sa-tokens-image-pulls-beta/
+  https://kubernetes.io/docs/tasks/administer-cluster/kubelet-credential-provider
+- AWS issuer must be publicly reachable over HTTPS with a discovery document:
+  https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_providers_create_oidc.html
+- Entra (Azure) federates GitHub Actions and Kubernetes anywhere, and
+  validates tokens against the issuer's OIDC endpoint, downloading its keys:
+  https://learn.microsoft.com/en-us/entra/workload-id/workload-identity-federation
+  (It says the keys are downloaded from the endpoint; it does not say
+  "public" in so many words. Entra is a cloud service, so in practice it is.)
+- Google accepts an uploaded JWKS when the issuer is not public:
+  https://docs.cloud.google.com/iam/docs/workload-identity-federation-with-other-providers
+- Official plugins and the pod token, from their source code:
+  kubernetes/cloud-provider-aws cmd/ecr-credential-provider/main.go
+  (AssumeRoleWithWebIdentity, role from the eks.amazonaws.com/ecr-role-arn
+  ServiceAccount annotation); kubernetes-sigs/cloud-provider-azure
+  pkg/credentialprovider/azure_credentials.go (client assertion credential);
+  Google's auth-provider-gcp hardcodes the GKE fleet audience, per the
+  gcp-wif-credential-provider README.
+- Budgets: Google, disabling billing is DIY and not guaranteed:
+  https://docs.cloud.google.com/billing/docs/how-to/disable-billing-with-notifications
+  AWS Budgets Actions:
+  https://aws.amazon.com/about-aws/whats-new/2020/10/announcing-aws-budgets-actions/
+  Azure spending limit, not available for pay-as-you-go:
+  https://learn.microsoft.com/en-us/azure/cost-management-billing/manage/spending-limit
 -->
 
 # Every homelab has a token in a Secret
@@ -71,12 +97,13 @@ One idea, explained well enough that the rest of the post is just examples.
 # Choosing a registry that accepts the badge
 
 - The deciding fact: the reader's obvious choice, GitHub's own container registry, cannot do this. Pulling a private image from it needs a token. What I needed was a registry that accepts federated badges from both GitHub and my cluster.
-- The large clouds' registries do: AWS's ECR, Azure's ACR, Google's Artifact Registry. I used Google's, for reasons that do not matter much here (say them in one sentence at most); everything below works the same way on the other two, with different names for the pieces.
+- The large clouds' registries do: AWS's ECR, Azure's ACR, Google's Artifact Registry. All three clouds federate with GitHub Actions and with Kubernetes clusters running anywhere.
+- One difference matters for a cluster at home, so give it a paragraph: to check the cluster's tokens, the cloud needs the cluster's public signing keys. AWS and Azure fetch them from the cluster's issuer URL, which must be reachable over public HTTPS — so a cluster behind a home router has to publish its discovery document and keys somewhere public (a static site will do) and use that URL as its issuer. Google also lets you upload the keys directly, which is why I used Google: nothing about the cluster had to become public. Everything else below works the same on all three, with different names for the pieces.
 - So one place, one trust mechanism, for every direction: CI pushes, the cluster pulls.
 - Alternatives considered, a sentence each: running my own registry (the credential problem just moves inside the cluster), keeping GitHub's registry with a token (the thing I was trying to remove).
 - What it costs, before the reader asks:
   - a dependency on the cloud provider being up (last section);
-  - real money is possible, so a budget alert — and the surprising detail that it is usually only an alert: cloud providers generally cannot hard-cap spending, and switching billing off automatically would take every image pull down with it;
+  - real money is possible, so a budget alert — and the surprising detail that it is only an alert: on a normal pay-as-you-go account none of the three caps spending for you. Google documents a do-it-yourself way to switch billing off when a budget is hit (which shuts down everything in the project, every image pull included); AWS can run actions when a budget is crossed, such as applying a restrictive policy; Azure's spending limit exists only on free and credit-based subscriptions;
   - the cluster's signing key becomes something the cloud trusts, so replacing it becomes a planned step.
 
 # Pulling an image as the pod that needs it
@@ -105,8 +132,9 @@ The technically most interesting part; give it room.
         requireServiceAccount: true
   ```
 
-  Explain the two lines that matter: `matchImages` (only images from that one registry go through the plugin; everything else pulls as before) and the token attributes (the kubelet mints a token for the pod's ServiceAccount, for this purpose only). Say which Kubernetes version made this available (verify before writing).
-- Why I wrote a plugin rather than using the cloud's own: the ready-made ones I know of authenticate as the *node*, not as the pod, which means every pod on the node can pull everything the node can (verify per provider before writing). One sentence on mine: small, released with a verifiable build record, installed on each node by checksum. Link to it.
+  Explain the two lines that matter: `matchImages` (only images from that one registry go through the plugin; everything else pulls as before) and the token attributes (the kubelet mints a token for the pod's ServiceAccount, for this purpose only). This arrived as alpha in Kubernetes 1.33 and has been beta, on by default, since 1.34.
+- Contrast with how image pulls from a cloud registry used to work: the plugin authenticated as the *node*, so every pod on a node could pull whatever the node could.
+- Each cloud's own plugin now accepts the pod's token: AWS's assumes a role named in an annotation on the ServiceAccount, Azure's exchanges it as a federated credential. Google's only works on Google's own Kubernetes service, because it expects that service's identity setup. That gap is why I wrote a small plugin for Google outside its managed Kubernetes: released with a verifiable build record, installed on each node by checksum. Link to it; a reader on AWS or Azure should use the official plugin.
 - How I knew it worked, which is the convincing part:
   - a test pod that must pull fresh every time, because a cached image hides a broken pull;
   - a pod whose ServiceAccount was never meant to have access: refused by the cloud provider. That refusal is the proof that the identity does the work, not some leftover credential on the node.
