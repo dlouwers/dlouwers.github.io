@@ -261,6 +261,18 @@ How often it fires, against the real model: the summary test runs two real days 
 
 Those are small samples. They say the rule is easy for the model to keep, not that it always will be. The retry is a seatbelt, not the mechanism. Without it, the failure is the one this post started with: digits in the model's own style, sent to my phone, unnoticed, because they read fine.
 
+# Three smaller lessons
+
+The app also reads the news. When an article mentions one of my holdings, a second prompt decides whether the article is actually about it. If I held Apple, a story about the apple harvest would mention it without being about it. It writes a short reason for each decision, and for the articles it keeps, a sentence on what the news means for my portfolio. Testing that prompt against the real model taught me three more things.
+
+**Give a model an example phrase and it will copy it.** The field for the reason offered three sample phrasings in brackets. Three of five rejected articles came back with the same sentence, word for word one of the samples: "the matched word is incidental". The decisions were right. The reasons were useless, and the reason is the one field that has to say something the decision does not: what the article was about instead. The fix removed the samples and asked for the article's subject, with one example so specific that copying it would be obviously wrong. The reasons came back distinct ("the harvest of the fruit 'apple'", "ECB monetary policy and inflation"), with the decisions unchanged. My first draft of that fix quoted the bad phrase as a counter-example, "do not write …", which handed it over all the same. A test caught it: it asserts that the prompt offers no phrase to copy. It does not assert particular wording, because wording is a judgement call and the absence of the phrase is not.
+
+**"Where it matters" is a question you are handing over.** The sentence on what the news means was supposed to say how much of my portfolio the holding is, because that is the only number that tells me how much of my money the news is about. The prompt asked for the holding's details "where they matter", with the share as an example. Four answers in five used it. The fifth said something like "positive for your holding of 120 shares, worth 4,800 EUR": true, and nothing I did not already know. If the answer to "does it matter here?" is always yes, do not ask. The next version required the share, exactly as given and not rounded, since "about 8%" is a different claim from 8.3%. Six runs in a row then stated it, each in slightly different words, which is what quoting a figure looks like, as opposed to copying a sentence. Today that share is a placeholder like the rest.
+
+That gap got through for a dull reason. The test against the real model did check for the share, but it reported a missing one as a log line, not a failure. A warning nobody reads is not a check. It is an assertion now.
+
+**What the model sees, it uses.** One weekend, on my test setup, the only thing that moved was a currency position. That was enough to trigger a summary, which then retold every holding and the cash share, all unchanged, as every summary had. The prompt listed them all, so the model talked about them all. The fix was in the input rather than in the wording. The prompt now lists only holdings that moved: price changed, size changed, opened or closed. The rest are reduced to a count. Cash appears only when the balance changed, and the third paragraph is written only when there is something new to say.
+
 <!--
 OUTLINE — part 1 (journey: what was tried, what failed, what replaced it)
 
