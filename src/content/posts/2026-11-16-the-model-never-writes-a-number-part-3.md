@@ -127,6 +127,29 @@ The first question is answered by the "Verdicts" column and the date: version 4 
 
 The metrics still exist, for trends while the process runs. The table is for the question after a deploy, which a counter that just restarted cannot answer.
 
+# Replaying the past instead of waiting for the clock
+
+Since part one, the summary moved to the evening. It covers the time since the previous summary, and it skips a day when nothing moved. Each of those rules is easy to state and hard to test. The question is never "does this code run", but "what would it have done last Saturday".
+
+At first I tested that the slow way: deploy to the test setup, wait for the day in question, and read what arrived. Days per change, on a simulated account. It did find one problem, the weekend summary that retold every holding because a currency position had ticked, which part two describes. But that finding came from the data, and the data was already stored. Waiting for the clock only replayed what the database already knew.
+
+So now the app replays it. A replay command walks the summary schedule over a stretch of stored snapshots and prints, for each time a summary was due, what the job would have done: write or skip, which earlier snapshot it compares against, which holdings moved or were still moving, and which news it would include. It runs the job's own code, not a copy of its logic, so the replay cannot drift from what the schedule does. With invented holdings, and trimmed, a weekend looks like this:
+
+```text
+Replay, 2026-09-25 to 2026-09-28, summary time 22:00. Nothing is saved or sent.
+
+Thu 2026-09-25 22:00  writes  vs Wed 22:00  moved: ACME (still moving), FUND  quiet: WIDGET
+Fri 2026-09-26 22:00  writes  vs Thu 22:00  moved: ACME (still moving), FUND, WIDGET
+Sat 2026-09-27 22:00  writes  vs Fri 22:00  moved: ACME, FUND
+Sun 2026-09-28 22:00  skips   nothing moved since Sat 22:00
+```
+
+Two options go further. One prints the prompt the model would have been given for each summary. The other has the real model write it. Nothing is saved and nothing is sent: the database is opened read-only, and SQLite enforces that, so a replay against production data cannot change it.
+
+It earned its place on the first day. I had just added a rule for holdings whose move belongs to the previous trading day: a US share still settling after the evening summary, for example, should not appear in Saturday's summary as Saturday news. A replay over production data showed that the rule missed a fund whose daily price is published just before midnight. Its Friday price would have been Saturday's biggest mover. The rule was widened the same day, before that prompt version had written a single summary.
+
+This is backtesting, the way you would test a trading rule: run the decision over the history you have, instead of waiting for the future to supply examples. It has the same limit, too. A replay only sees what was stored. Prices between two snapshots are not there, and the model's wording varies between runs, so a replay that lets the model write shows what one run said, not what it will always say. The decisions in code, write or skip and what counts as moved, come out the same every time. The words still belong to the live tests.
+
 <!--
 OUTLINE — part 3 (journey: what broke, what replaced it)
 
