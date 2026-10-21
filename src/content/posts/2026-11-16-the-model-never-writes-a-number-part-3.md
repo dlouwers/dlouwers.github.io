@@ -113,13 +113,17 @@ The answers existed, in the logs and in the app's metrics. But metrics counters 
 
 So each summary and each news verdict now stores, next to its prompt version, how its check went: clean on the first attempt, clean after the retry, still dirty after the retry, or retry failed. That is the outcome from part two, kept in the database instead of only counted in memory. An admin page groups it by version. With invented numbers, and one column left out, the news judge's part of it looks like this:
 
-```text
-Version       Verdicts  Kept  Clean  After retry  Still dirty  Not checked  Last used
-4 (in force)       126    34     33            1            0           92  today
-3                  418   102      0            0            0          418  25 Sep
-```
+<sl-table density="compact">
+  <table>
+    <thead><tr><th>Version</th><th class="num">Verdicts</th><th class="num">Kept</th><th class="num">Clean</th><th class="num">Retried</th><th class="num">Dirty</th><th class="num">Unchecked</th><th style="white-space: nowrap">Last used</th></tr></thead>
+    <tbody>
+      <tr><td style="white-space: nowrap">4, in force</td><td class="num">126</td><td class="num">34</td><td class="num">33</td><td class="num">1</td><td class="num">0</td><td class="num">92</td><td style="white-space: nowrap">today</td></tr>
+      <tr><td>3</td><td class="num">418</td><td class="num">102</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">418</td><td style="white-space: nowrap">25 Sep</td></tr>
+    </tbody>
+  </table>
+</sl-table>
 
-The first question is answered by the "Verdicts" column and the date: version 4 has written something, and it is the one in use. The second is answered by the check columns: of the 34 kept verdicts, one needed the retry and none got through dirty. "Not checked" holds the rest: rejected verdicts, which have no explanation to check, and everything written before outcomes were stored. That column is why version 3 shows zeros without them reading as "clean".
+The first question is answered by the "Verdicts" column and the date: version 4 has written something, and it is the one in use. The second is answered by the check columns: of the 34 kept verdicts, one needed the retry and none got through dirty. "Unchecked" holds the rest: rejected verdicts, which have no explanation to check, and everything written before outcomes were stored. That column is why version 3 shows zeros without them reading as "clean".
 
 The metrics still exist, for trends while the process runs. The table is for the question after a deploy, which a counter that just restarted cannot answer.
 
