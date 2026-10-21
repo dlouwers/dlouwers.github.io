@@ -15,6 +15,15 @@ Astro site, built to static HTML and served from GitHub Pages.
 CI builds with `npm run build`, not `bun run build`: bun's `worker_threads`
 handling hangs on the D2 WASM worker. See the comment in `.github/workflows/deploy.yml`.
 
+The design system packages (`@dlouwers/stormlantern-*`) come from Google
+Artifact Registry. `.npmrc` reads the token from `NPM_GAR_TOKEN`; CI gets one
+through Workload Identity Federation, no secret stored. Locally:
+
+```sh
+export NPM_GAR_TOKEN=$(gcloud auth print-access-token)
+bun install
+```
+
 ## Writing a post
 
 One file in `src/content/posts/`, named `YYYY-MM-DD-slug.md`. The schema lives in

@@ -8,8 +8,8 @@
         "@astrojs/mdx": "^5.0.4",
         "@astrojs/rss": "^4.0.18",
         "@astrojs/sitemap": "^3.7.2",
-        "@dlouwers/stormlantern-components": "0.5.0",
-        "@dlouwers/stormlantern-tokens": "0.3.0",
+        "@dlouwers/stormlantern-components": "0.5.1",
+        "@dlouwers/stormlantern-tokens": "0.3.1",
         "astro": "^6.3.1",
         "astro-expressive-code": "^0.42.0",
       },
@@ -51,9 +51,9 @@
 
     "@ctrl/tinycolor": ["@ctrl/tinycolor@4.2.0", "", {}, "sha512-kzyuwOAQnXJNLS9PSyrk0CWk35nWJW/zl/6KvnTBMFK65gm7U1/Z5BqjxeapjZCIhQcM/DsrEmcbRwDyXyXK4A=="],
 
-    "@dlouwers/stormlantern-components": ["@dlouwers/stormlantern-components@0.5.0", "https://npm.pkg.github.com/download/@dlouwers/stormlantern-components/0.5.0/47ce3958b6a304c46ca36960f2b235d8b7d4f6a5", { "peerDependencies": { "@dlouwers/stormlantern-tokens": "*" } }, "sha512-67qLTsP9SZHNLtU+Q4N1VlmygfJJOWI3KhCUikCZk2yLCba1hQpK+ea/J1MWIL+cLLd3shnc2xQnPOG02dwWxg=="],
+    "@dlouwers/stormlantern-components": ["@dlouwers/stormlantern-components@0.5.1", "https://europe-west4-npm.pkg.dev/homelab-495021/npm-stormlantern/@dlouwers/stormlantern-components/-/@dlouwers/stormlantern-components-0.5.1.tgz", { "peerDependencies": { "@dlouwers/stormlantern-tokens": "*" } }, "sha512-I99S8/zfDDa6zIwLF9G7AaRmgd2Q3YrxrB9xh4C1eQC/42IX8fTq0X0GKL5kDo/axd+Vo2kr/pXSXUlF2po3IA=="],
 
-    "@dlouwers/stormlantern-tokens": ["@dlouwers/stormlantern-tokens@0.3.0", "https://npm.pkg.github.com/download/@dlouwers/stormlantern-tokens/0.3.0/02ffbc25b846aed35b2cdf07018fbd8da5829ecd", {}, "sha512-ArK34NmQ9EQM5dU1SbATro4x5UH4Z4gcS7HHqolUMb3TMIwgG8PXTaPcHSBOchl1DUw1s862VWfAV2J/GQLfIQ=="],
+    "@dlouwers/stormlantern-tokens": ["@dlouwers/stormlantern-tokens@0.3.1", "https://europe-west4-npm.pkg.dev/homelab-495021/npm-stormlantern/@dlouwers/stormlantern-tokens/-/@dlouwers/stormlantern-tokens-0.3.1.tgz", {}, "sha512-krsKJOyFSdQZua5lHVgCJVPEecXUrQLgfN3UvHAtGmWSTCbShWbRYOQxNvZvVYA62H2hGJ9DZB82gYC3S1bWbw=="],
 
     "@emnapi/runtime": ["@emnapi/runtime@1.10.0", "", { "dependencies": { "tslib": "^2.4.0" } }, "sha512-ewvYlk86xUoGI0zQRNq/mC+16R1QeDlKQy21Ki3oSYXNgLb45GV1P6A0M+/s6nyCuNDqe5VpaY84BzXGwVbwFA=="],
 
