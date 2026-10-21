@@ -5,8 +5,10 @@
 // withastro/astro#8483, oven-sh/bun#8816).
 //
 // The bridge from D2's `@media (prefers-color-scheme: dark)` to the site's
-// `[data-theme="dark"]` toggle is applied to the rendered SVG too, so the
-// dark-mode story stays the same as when the plugin ran inline.
+// `[data-theme="dark"]` toggle is applied to the rendered SVG too. Its rules
+// are scoped under the page's <html>, so they only work when the SVG is
+// inlined into the page, which plugins/rehype-inline-diagrams.mjs does at
+// build time. Loaded as an <img>, the SVG would stay light in dark mode.
 
 import { readFile, writeFile, readdir, mkdir } from 'node:fs/promises';
 import { join, basename, extname } from 'node:path';

@@ -80,8 +80,9 @@
 /* Expressive-code wrapper sits as a direct .prose child. */
 .prose .expressive-code { margin: var(--sl-space-6) 0; }
 
-/* Diagrams produced by the remark-d2 plugin. The SVG carries its own
-   theming (light + dark styles wired to [data-theme]); we just frame it. */
+/* Diagrams, inlined at build time by plugins/rehype-inline-diagrams.mjs.
+   The SVG carries its own theming (light + dark styles wired to
+   [data-theme]); we just frame it. */
 .prose .d2-diagram {
   margin: var(--sl-space-6) 0;
   text-align: center;
