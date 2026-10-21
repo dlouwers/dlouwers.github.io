@@ -40,6 +40,18 @@ The code and the model name had to move together, and the automation had moved o
 
 Nothing in that evening was the model getting something wrong. It never got to say anything. But it is the point of this part: a prompt and the model it runs on are deployed like code, and they break like code. By version, by configuration, by two halves being out of step. So they get what any deployment gets: a version you can trace, tests before they ship, a check that they work before they take traffic, and a way to see whether they are working once they do.
 
+# Which prompt wrote this?
+
+A summary changes from one day to the next for three reasons: the data changed, the model changed, or the prompt changed. Reading the summary, you cannot tell which. So each prompt has a version, a plain name such as "daily summary, version 7", and every summary is stored with the version of the prompt and the name of the model that wrote it. That was there from the first day, before I knew what I would need it for. Every fix in parts one and two was a new version.
+
+Next to the version, in the code, sits a short history: one paragraph per version on what changed and why. It reads like a changelog, and it is the most useful comment in the app. When an old summary looks odd, the stored version leads to the paragraph that says what that prompt did and did not know.
+
+The rule for when to bump is "when what the model is told changes", not "when the prompt text changes". The second version of the summary prompt had exactly the same text as the first. What changed was which earlier snapshot it was handed as "yesterday". The text was identical and the meaning was not, and an old summary written against the wrong yesterday should be traceable as such.
+
+That rule is also why nothing enforces the bump. A test that fingerprints the prompt text would catch a forgotten bump after an edit, and miss exactly that second version. So it is a habit, written down in the comment above the version. So far that has held, but I would not call it a check.
+
+The version then pays off in two places later in this part: re-judging old output when a prompt changes, and seeing how each version is doing once it is live.
+
 <!--
 OUTLINE — part 3 (journey: what broke, what replaced it)
 
