@@ -27,10 +27,7 @@
   stroke-linecap: round;
   stroke-linejoin: round;
 }
-.blend {
-  mix-blend-mode: multiply;
-  opacity: 0.5;
-}
+.blend{mix-blend-mode:normal;opacity:1}.blend>rect{fill:none !important;stroke:var(--sl-color-diagram-line) !important;stroke-width:1px !important}
 
 		.d2-2176615581 .fill-N1{fill:var(--sl-color-diagram-text);}
 		.d2-2176615581 .fill-N2{fill:var(--sl-color-diagram-label);}
