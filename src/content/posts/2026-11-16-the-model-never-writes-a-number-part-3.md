@@ -76,7 +76,7 @@ That last one is worth a second look. The tests proved that the new code worked 
 
 # A new prompt reaches nothing
 
-The news prompt from part two, the one that writes names and literals instead of numbers, passed its live tests and went out to the test setup. Hours later, not one article on it had a new explanation.
+The news prompt from part two, the one that writes names and literals instead of numbers, passed its live tests and went out to the test setup. After two hourly polls, not one article there had a new explanation.
 
 Nothing was broken. The app judged articles that had no verdict yet, and every article on the dashboard already had one, reached under the previous prompt. New articles would get the new prompt, but on a quiet news day none came in: two polls, nothing new. A deploy whose only change was a prompt had changed nothing anyone could see, and it would have stayed that way until the news happened to move.
 
