@@ -113,12 +113,12 @@ The answers existed, in the logs and in the app's metrics. But metrics counters 
 
 So each summary and each news verdict now stores, next to its prompt version, how its check went: clean on the first attempt, clean after the retry, still dirty after the retry, or retry failed. That is the outcome from part two, kept in the database instead of only counted in memory. An admin page groups it by version. With invented numbers, and one column left out, the news judge's part of it looks like this:
 
-<sl-table density="compact">
+<sl-table density="compact" stack>
   <table>
     <thead><tr><th>Version</th><th class="num">Verdicts</th><th class="num">Kept</th><th class="num">Clean</th><th class="num">Retried</th><th class="num">Dirty</th><th class="num">Unchecked</th><th style="white-space: nowrap">Last used</th></tr></thead>
     <tbody>
-      <tr><td style="white-space: nowrap">4, in force</td><td class="num">126</td><td class="num">34</td><td class="num">33</td><td class="num">1</td><td class="num">0</td><td class="num">92</td><td style="white-space: nowrap">today</td></tr>
-      <tr><td>3</td><td class="num">418</td><td class="num">102</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">418</td><td style="white-space: nowrap">25 Sep</td></tr>
+      <tr><td data-label="Version" style="white-space: nowrap">4, in force</td><td data-label="Verdicts" class="num">126</td><td data-label="Kept" class="num">34</td><td data-label="Clean" class="num">33</td><td data-label="Retried" class="num">1</td><td data-label="Dirty" class="num">0</td><td data-label="Unchecked" class="num">92</td><td data-label="Last used" style="white-space: nowrap">today</td></tr>
+      <tr><td data-label="Version">3</td><td data-label="Verdicts" class="num">418</td><td data-label="Kept" class="num">102</td><td data-label="Clean" class="num">0</td><td data-label="Retried" class="num">0</td><td data-label="Dirty" class="num">0</td><td data-label="Unchecked" class="num">418</td><td data-label="Last used" style="white-space: nowrap">25 Sep</td></tr>
     </tbody>
   </table>
 </sl-table>
