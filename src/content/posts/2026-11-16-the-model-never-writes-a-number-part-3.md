@@ -182,6 +182,22 @@ It was proven by breaking it on purpose. On the test setup I set a model name th
 
 The evening in September would now look different. The new code would have started, made three calls, got three errors, and stayed out of service. The old version would have kept writing summaries until the configuration caught up.
 
+# What is left for the model
+
+Three parts, one direction. Part one took the facts away from the model: unknown stays unknown, and a sale is worked out as a sale before the prompt is written. Part two took away the numbers: the model writes names, and code fills them in, in the reader's notation, after checking every reply. This part treated the prompt and the model as what they are in production: a versioned dependency, tested against the real thing, rolled out behind a check, and watched afterwards.
+
+What is left for the model is the part it is good at. It decides which of the facts lead, how much weight each one gets, and how to say it in three short paragraphs I want to read. That is still most of what makes the summary worth having. It is also the only part I can no longer check with a test, so it is the part I read.
+
+If you are about to put model-written text next to real data, this is what I would set up from the start, in the order it paid off for me:
+
+- **Treat every value in the prompt as a claim.** Missing is "unknown", never zero, and anything the model would have to infer is worked out in code and stated.
+- **Keep numbers out of the model's reply.** Let it write names, fill them in when the text is shown, and check every reply for stray digits.
+- **Version every prompt, and store the version with every output.**
+- **Test against the real model**, a handful of fixed cases, several runs each, failing loudly, and skipping loudly when there is no key.
+- **Gate the rollout on one real call per component**, with the real configuration, so a pod that cannot reach its model never takes traffic.
+
+Not everything is done. A deposit still reads as a gain, and the news judge still looks at a slightly different set of articles than the dashboard shows. Both are written down, and neither is the model's fault. That, in the end, is what the whole series amounts to: when the summary is wrong now, the reason is usually in my code, where a test can find it.
+
 <!--
 OUTLINE — part 3 (journey: what broke, what replaced it)
 
