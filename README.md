@@ -37,6 +37,11 @@ coverAlt: Description of the cover.     # optional
 `public/img/diagrams/`. Embed it with the `<figure class="d2-diagram">` pattern
 used in the existing posts. (Rendering used to be a remark plugin; it hung CI.)
 
+The build does inline them: `plugins/rehype-inline-diagrams.mjs` replaces each
+`<img src="/img/diagrams/….svg">` with the SVG itself. As an `<img>`, a diagram
+is a separate document and its dark-mode rules, which are scoped to the page's
+`<html>`, never apply; inline, they follow both the OS and the theme toggle.
+
 ## Scheduled publishing
 
 A post whose `date` is in the future is built into nothing — no page, no RSS item,
