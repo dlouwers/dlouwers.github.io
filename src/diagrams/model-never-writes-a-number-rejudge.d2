@@ -1,0 +1,48 @@
+direction: down
+
+# Grids fill column by column here, so items are declared A, E, B, F, ...
+# to read A B C D on the first row.
+recent: "Recent articles (prompt in force: version 4)" {
+  style.font-size: 18
+  grid-columns: 4
+  grid-gap: 12
+  a: "A\nno verdict"
+  e: "E\nversion 3"
+  b: "B\nversion 4"
+  f: "F\nversion 4"
+  c: "C\nversion 3"
+  g: "G\nversion 3"
+  d: "D\nno verdict"
+  h: "H\nversion 5,\nrolled back"
+}
+
+pass1: "Pass 1, limit 4" {
+  style.font-size: 18
+  grid-columns: 2
+  grid-gap: 12
+  a: "A"
+  d: "D"
+  c: "C"
+  e: "E"
+}
+
+pass2: "Pass 2, next hour" {
+  style.font-size: 18
+  grid-columns: 2
+  grid-gap: 12
+  g: "G"
+  h: "H"
+}
+
+skip: "Left alone" {
+  style.font-size: 18
+  style.stroke-dash: 3
+  grid-columns: 2
+  grid-gap: 12
+  b: "B"
+  f: "F"
+}
+
+recent -> pass1: "no verdict first,\nthen other versions"
+recent -> pass2: "did not fit"
+recent -> skip: "already\nversion 4"

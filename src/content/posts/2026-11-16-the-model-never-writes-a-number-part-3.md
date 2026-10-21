@@ -76,17 +76,26 @@ That last one is worth a second look. The tests proved that the new code worked 
 
 # A new prompt reaches nothing
 
-The news prompt from part two, the one that writes names and literals instead of numbers, passed its live tests and went out to the test setup. After two hourly polls, not one article there had a new explanation.
+Part two described the news prompt: when an article mentions one of my holdings, the model decides whether the article is really about it and writes a short explanation. Together those are the article's *verdict*, and it is stored. The new version of that prompt, the one that writes names and literals instead of numbers, passed its live tests and went out to the test setup. After two hourly polls, not one article there had a new explanation.
 
 Nothing was broken. The app judged articles that had no verdict yet, and every article on the dashboard already had one, reached under the previous prompt. New articles would get the new prompt, but on a quiet news day none came in: two polls, nothing new. A deploy whose only change was a prompt had changed nothing anyone could see, and it would have stayed that way until the news happened to move.
 
 That is a general property of anything that stores model output: a new prompt applies only to what is generated after it. Everything already stored was written by a prompt you have since decided was worse.
 
-The fix uses the version from earlier. Each pass of the news judge now also picks up recent verdicts reached under *another* version and judges them again. "Another", not "older", on purpose: after a rollback, the old prompt is the one in force, and verdicts from the abandoned new one are just as out of date. A few details keep it cheap and safe:
+The fix uses the version from earlier. Every hour, the app takes the most recent articles and decides which of them to send to the model, in this order:
 
-- Articles with no verdict at all go first. An article nobody has assessed matters more than one assessed by yesterday's prompt.
-- Both share the same limit on calls per pass, so a prompt change works its way through the recent articles over a few passes instead of in one burst of paid calls.
-- A re-judge that fails keeps the old verdict. An article never loses the verdict it had because a newer one could not be reached.
+1. Articles with no verdict at all. An article nobody has assessed matters more than one assessed by an outdated prompt.
+2. Articles whose verdict was reached under *another* version of the prompt than the one in force. "Another", not "older", on purpose: after a rollback, the old prompt is in force again, and verdicts from the abandoned newer one are just as out of date.
+3. Nothing else. A verdict from the prompt in force is left alone.
+
+Both groups share one limit on model calls per pass, so a prompt change works its way through over a few passes instead of in one burst of paid calls. A re-judge that fails keeps the old verdict: an article never loses the verdict it had because a newer one could not be reached.
+
+An example, with a limit of four (the real one is larger). Version 4 of the prompt is in force, after a rollback from version 5. Of eight recent articles, A and D have no verdict. C, E and G were judged by version 3, H by version 5, and B and F by version 4. The first pass takes A and D, then fills its two remaining places with C and E. G and H wait for the next pass. B and F are not touched.
+
+<figure class="d2-diagram" role="img" aria-label="Eight recent articles, A to H, with version 4 of the prompt in force. A and D have no verdict; C, E and G have a verdict from version 3; H from version 5, which was rolled back; B and F from version 4. Pass 1, with a limit of 4, re-judges A and D first, then C and E. G and H did not fit and go to pass 2, the next hour. B and F are left alone, because they already have a version 4 verdict.">
+  <img src="/img/diagrams/model-never-writes-a-number-rejudge.svg" alt="" />
+  <figcaption>One pass with a limit of four: articles without a verdict first, then verdicts from any other version, older or newer.</figcaption>
+</figure>
 
 On the test setup, the next deploy re-judged every recent article at startup and on the following hourly poll. The logs for the first 80 showed no errors. Checking whether a new prompt works on real data became a side effect of deploying it.
 
