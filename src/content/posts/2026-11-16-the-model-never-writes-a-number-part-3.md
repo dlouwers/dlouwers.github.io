@@ -105,6 +105,23 @@ On the test setup, the next deploy re-judged every recent article at startup and
 
 I left the daily summaries alone. Each one was sent to my phone on its own day, and rewriting it would change the record of what I was told.
 
+# Did the new prompt work?
+
+After a deploy that changes a prompt, I want answers to two questions. Has the new version reached any data yet? And does what it writes keep the rules from part two, names instead of digits?
+
+The answers existed, in the logs and in the app's metrics. But metrics counters live in the running process, and the deploy that raised the question was also the one that restarted it. The counts started from zero at the moment I wanted to compare before and after. The logs had the detail, but a yes-or-no question should not need a search through logs.
+
+So each summary and each news verdict now stores, next to its prompt version, how its check went: clean on the first attempt, clean after the retry, still dirty after the retry, or retry failed. That is the outcome from part two, kept in the database instead of only counted in memory. An admin page groups it by version. With invented numbers, and one column left out, the news judge's table looks like this:
+
+| Version | Verdicts | Kept | Clean | Clean after retry | Still dirty | Not checked | Last used |
+|---|---|---|---|---|---|---|---|
+| 4 (in force) | 126 | 34 | 33 | 1 | 0 | 92 | today |
+| 3 | 418 | 102 | 0 | 0 | 0 | 418 | 25 September |
+
+The first question is answered by the "Verdicts" column and the date: version 4 has written something, and it is the one in use. The second is answered by the check columns: of the 34 kept verdicts, one needed the retry and none got through dirty. "Not checked" holds the rest: rejected verdicts, which have no explanation to check, and everything written before outcomes were stored. That column is why version 3 shows zeros without them reading as "clean".
+
+The metrics still exist, for trends while the process runs. The table is for the question after a deploy, which a counter that just restarted cannot answer.
+
 <!--
 OUTLINE — part 3 (journey: what broke, what replaced it)
 
