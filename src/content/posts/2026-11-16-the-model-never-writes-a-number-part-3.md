@@ -74,6 +74,24 @@ The live tests found three of the problems in part two: the copied phrase in the
 
 That last one is worth a second look. The tests proved that the new code worked with the new model. They said nothing about which model production was configured to use, and that is what broke on the September evening above. A test of the model is not a test of the deployment.
 
+# A new prompt reaches nothing
+
+The news prompt from part two, the one that writes names and literals instead of numbers, passed its live tests and went out to the test setup. Hours later, not one article on it had a new explanation.
+
+Nothing was broken. The app judged articles that had no verdict yet, and every article on the dashboard already had one, reached under the previous prompt. New articles would get the new prompt, but on a quiet news day none came in: two polls, nothing new. A deploy whose only change was a prompt had changed nothing anyone could see, and it would have stayed that way until the news happened to move.
+
+That is a general property of anything that stores model output: a new prompt applies only to what is generated after it. Everything already stored was written by a prompt you have since decided was worse.
+
+The fix uses the version from earlier. Each pass of the news judge now also picks up recent verdicts reached under *another* version and judges them again. "Another", not "older", on purpose: after a rollback, the old prompt is the one in force, and verdicts from the abandoned new one are just as out of date. A few details keep it cheap and safe:
+
+- Articles with no verdict at all go first. An article nobody has assessed matters more than one assessed by yesterday's prompt.
+- Both share the same limit on calls per pass, so a prompt change works its way through the recent articles over a few passes instead of in one burst of paid calls.
+- A re-judge that fails keeps the old verdict. An article never loses the verdict it had because a newer one could not be reached.
+
+On the test setup, the next deploy re-judged every recent article at startup and on the following hourly poll. The logs for the first 80 showed no errors. Checking whether a new prompt works on real data became a side effect of deploying it.
+
+I left the daily summaries alone. Each one was sent to my phone on its own day, and rewriting it would change the record of what I was told.
+
 <!--
 OUTLINE — part 3 (journey: what broke, what replaced it)
 
