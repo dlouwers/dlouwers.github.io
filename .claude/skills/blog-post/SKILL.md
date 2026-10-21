@@ -74,9 +74,20 @@ D2, pre-rendered to SVG (README). What worked and what did not:
 - The `<figure class="d2-diagram">` block must not contain blank lines, or
   markdown breaks it apart. Write a real `aria-label` describing the content
   and set `alt=""` on the `<img>`.
-- The build inlines that `<img>` as the SVG itself, so the diagram follows the
-  dark-mode toggle. Check a new diagram in dark mode in `astro dev` too; a
-  diagram shown as a plain image would stay light.
+- The build inlines that `<img>` as the SVG itself, on the same panel as code
+  blocks, and its colours are the design system's diagram roles. Do not pick
+  colours in the `.d2` file; the recolouring replaces D2's colour slots, and a
+  hand-picked hex would not follow dark mode. Check a new diagram in both
+  themes in `astro dev`.
+
+## Tables
+
+- Use `<sl-table density="compact" stack>` around a plain HTML `<table>`, not
+  a Markdown table: the site has no table styles of its own. `stack` turns each
+  row into a card on a phone; give every `<td>` a `data-label` with its column
+  name. Right-align numbers with `class="num"`.
+- Keep the column count small and the headers short, and check the table at
+  phone width as well as desktop.
 - Captions and aria-labels are final text. Search for `DRAFT` before merging.
 
 ## Covers

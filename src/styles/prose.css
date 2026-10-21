@@ -28,11 +28,12 @@
 .prose em { font-style: italic; }
 
 .prose a {
-  color: var(--sl-color-accent);
-  text-decoration-color: color-mix(in srgb, var(--sl-color-accent) 40%, transparent);
+  /* accent-text, not accent: orange.500 as text on the page measured 2.73. */
+  color: var(--sl-color-accent-text);
+  text-decoration-color: color-mix(in srgb, var(--sl-color-accent-text) 40%, transparent);
   text-underline-offset: 2px;
 }
-.prose a:hover { color: var(--sl-color-accent-hover, var(--sl-color-accent)); }
+.prose a:hover { text-decoration-color: var(--sl-color-accent-text); }
 
 .prose ul, .prose ol {
   padding-left: var(--sl-space-5);
@@ -71,8 +72,8 @@
 .prose :not(pre) > code {
   font-family: var(--sl-font-family-mono);
   font-size: 0.92em;
-  background: var(--sl-color-paper);
-  border: 1px solid var(--sl-color-line);
+  background: var(--sl-color-panel);
+  border: 1px solid var(--sl-color-panel-border);
   padding: 0 0.3em;
   border-radius: var(--sl-radius-xs);
 }
@@ -85,12 +86,23 @@
    [data-theme]); we just frame it. */
 .prose .d2-diagram {
   margin: var(--sl-space-6) 0;
+}
+/* The content panel (design system #38), shared with code blocks. The
+   diagram's own background is diagram-ground, which equals panel, so the
+   diagram sits flush on it. */
+.prose .d2-panel {
+  background: var(--sl-color-panel);
+  border: 1px solid var(--sl-color-panel-border);
+  border-radius: var(--sl-radius-panel);
+  box-shadow: var(--sl-shadow-panel);
+  padding: var(--sl-space-2);
   text-align: center;
 }
 .prose .d2-diagram svg {
   display: inline-block;
   max-width: 100%;
   height: auto;
+  vertical-align: middle;
 }
 .prose .d2-diagram figcaption {
   margin-top: var(--sl-space-2);

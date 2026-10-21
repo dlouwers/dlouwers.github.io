@@ -4,20 +4,20 @@
 // keeps the GHA runner's build process from exiting — see
 // withastro/astro#8483, oven-sh/bun#8816).
 //
-// The bridge from D2's `@media (prefers-color-scheme: dark)` to the site's
-// `[data-theme="dark"]` toggle is applied to the rendered SVG too. Its rules
-// are scoped under the page's <html>, so they only work when the SVG is
-// inlined into the page, which plugins/rehype-inline-diagrams.mjs does at
-// build time. Loaded as an <img>, the SVG would stay light in dark mode.
+// Colours come from the design system, not from D2 (design system #38). The
+// diagram is rendered with one D2 theme, and recolorD2Svg rewrites D2's colour
+// slots to var(--sl-color-diagram-*). Inlined into the page by
+// plugins/rehype-inline-diagrams.mjs, those follow the light/dark theme like
+// every other token, so no dark copy of the colours is needed.
 
 import { readFile, writeFile, readdir, mkdir } from 'node:fs/promises';
 import { join, basename, extname } from 'node:path';
 import { D2 } from '@terrastruct/d2';
+import { recolorD2Svg } from '@dlouwers/stormlantern-tokens/d2';
 
 const SRC = 'src/diagrams';
 const OUT = 'public/img/diagrams';
-const THEME = 0;       // light: D2 "neutral default"
-const DARK_THEME = 200; // dark: D2 "dark mauve"
+const THEME = 0; // D2 "neutral default"; only its slot classes matter after recolouring
 const PAD = 20;
 
 const entries = (await readdir(SRC)).filter((f) => extname(f) === '.d2');
@@ -37,11 +37,11 @@ for (const file of entries) {
   const raw = await d2.render(compiled.diagram, {
     ...compiled.renderOptions,
     themeID: THEME,
-    darkThemeID: DARK_THEME,
+    darkThemeID: undefined,
     pad: PAD,
     noXMLTag: true,
   });
-  const svg = bridgeDarkThemeToDataAttribute(toSvgString(raw));
+  const svg = recolorD2Svg(toSvgString(raw));
   await writeFile(outPath, svg, 'utf8');
   console.log(`${inPath} -> ${outPath}`);
 }
@@ -54,43 +54,4 @@ function toSvgString(value) {
   if (value instanceof Uint8Array) return new TextDecoder('utf-8').decode(value);
   if (value && typeof value === 'object' && 'svg' in value) return toSvgString(value.svg);
   return String(value ?? '');
-}
-
-function bridgeDarkThemeToDataAttribute(svg) {
-  const startRe = /@media screen and \(prefers-color-scheme:\s*dark\)\s*\{/;
-  const startMatch = svg.match(startRe);
-  if (!startMatch) return svg;
-  const openIdx = startMatch.index + startMatch[0].length - 1;
-  const closeIdx = matchingClose(svg, openIdx);
-  if (closeIdx === -1) return svg;
-  const body = svg.slice(openIdx + 1, closeIdx);
-  const rules = splitRules(body);
-  if (rules.length === 0) return svg;
-  const guarded = rules.map((r) => `:where(html:not([data-theme="light"])) ${r.sel}{${r.decl}}`).join('');
-  const explicit = rules.map((r) => `:where(html[data-theme="dark"]) ${r.sel}{${r.decl}}`).join('');
-  return svg.slice(0, startMatch.index)
-    + `@media screen and (prefers-color-scheme:dark){${guarded}}${explicit}`
-    + svg.slice(closeIdx + 1);
-}
-
-function matchingClose(s, openIdx) {
-  let depth = 0;
-  for (let i = openIdx; i < s.length; i++) {
-    const c = s[i];
-    if (c === '{') depth++;
-    else if (c === '}') { depth--; if (depth === 0) return i; }
-  }
-  return -1;
-}
-
-function splitRules(body) {
-  const rules = [];
-  for (const chunk of body.split('}')) {
-    const t = chunk.trim();
-    if (!t) continue;
-    const brace = t.indexOf('{');
-    if (brace === -1) continue;
-    rules.push({ sel: t.slice(0, brace).trim(), decl: t.slice(brace + 1) });
-  }
-  return rules;
 }
