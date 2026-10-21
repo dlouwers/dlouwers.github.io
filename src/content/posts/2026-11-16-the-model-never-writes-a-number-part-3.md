@@ -22,6 +22,22 @@ PROSE RULES (remove before merge)
 - The author is the app's only user.
 -->
 
+This is the last part of a series about a small app that watches my brokerage account and sends me a daily summary, written by a language model. [Part one](/posts/2026-11-02-the-model-never-writes-a-number/) was about a model handed data that could not answer the question it was asked. [Part two](/posts/2026-11-09-the-model-never-writes-a-number-part-2/) took the numbers away from it: the model writes names, code fills in the figures in the reader's notation, and every reply is checked before it is stored.
+
+Both were about what goes into the model and what comes out of it. This part is about the model and its prompts as things you deploy.
+
+# Green, and broken
+
+One evening in September I tagged a new release of the app. My cluster watches for new release images and moves the app onto them by itself, which is usually what I want. ([An earlier series](/posts/2026-10-19-a-homelab-with-nothing-to-rotate/) describes that setup.) Minutes later the new version was running. Kubernetes considered it ready, the logs were clean, and not one error had been recorded.
+
+Every call to the model was failing. The new version sent a setting, how much the model should reason before it answers, that the model named in the app's configuration does not support. The new code needed a newer model, and the configuration still named the old one. Gemini, my provider, answered every call with HTTP 400: "Thinking level is not supported for this model".
+
+Nothing noticed, because nothing had called the model yet. The summary runs once a day, and the news is judged once an hour. Fourteen minutes after the rollout I opened the dashboard and pressed the buttons that write a summary and fetch the news by hand. Both failed. Three minutes later, a commit moved the configuration to the new model.
+
+The code and the model name had to move together, and the automation had moved only one of them. Every check the cluster ran said the app was fine, because every check asked whether the web server answered, and it did.
+
+Nothing in that evening was the model getting something wrong. It never got to say anything. But it is the point of this part: a prompt and the model it runs on are deployed like code, and they break like code. By version, by configuration, by two halves being out of step. So they get what any deployment gets: a version you can trace, tests before they ship, a check that they work before they take traffic, and a way to see whether they are working once they do.
+
 <!--
 OUTLINE — part 3 (journey: what broke, what replaced it)
 
@@ -35,7 +51,6 @@ OUTLINE — part 3 (journey: what broke, what replaced it)
    - Promise: a prompt plus its model is a deployable thing. It gets what
      any deployment gets: a version, tests, a rollout check, and a way to
      see whether it works once live.
-   - TO CHECK: what moved prod onto the new image before the model pin.
 
 2. Which prompt wrote this? (~250)
    - Every prompt carries a version name; every summary and verdict stores
