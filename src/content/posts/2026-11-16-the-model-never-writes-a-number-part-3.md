@@ -111,12 +111,13 @@ After a deploy that changes a prompt, I want answers to two questions. Has the n
 
 The answers existed, in the logs and in the app's metrics. But metrics counters live in the running process, and the deploy that raised the question was also the one that restarted it. The counts started from zero at the moment I wanted to compare before and after. The logs had the detail, but a yes-or-no question should not need a search through logs.
 
-So each summary and each news verdict now stores, next to its prompt version, how its check went: clean on the first attempt, clean after the retry, still dirty after the retry, or retry failed. That is the outcome from part two, kept in the database instead of only counted in memory. An admin page groups it by version. With invented numbers, and one column left out, the news judge's table looks like this:
+So each summary and each news verdict now stores, next to its prompt version, how its check went: clean on the first attempt, clean after the retry, still dirty after the retry, or retry failed. That is the outcome from part two, kept in the database instead of only counted in memory. An admin page groups it by version. With invented numbers, and one column left out, the news judge's part of it looks like this:
 
-| Version | Verdicts | Kept | Clean | Clean after retry | Still dirty | Not checked | Last used |
-|---|---|---|---|---|---|---|---|
-| 4 (in force) | 126 | 34 | 33 | 1 | 0 | 92 | today |
-| 3 | 418 | 102 | 0 | 0 | 0 | 418 | 25 September |
+```text
+Version       Verdicts  Kept  Clean  After retry  Still dirty  Not checked  Last used
+4 (in force)       126    34     33            1            0           92  today
+3                  418   102      0            0            0          418  25 Sep
+```
 
 The first question is answered by the "Verdicts" column and the date: version 4 has written something, and it is the one in use. The second is answered by the check columns: of the 34 kept verdicts, one needed the retry and none got through dirty. "Not checked" holds the rest: rejected verdicts, which have no explanation to check, and everything written before outcomes were stored. That column is why version 3 shows zeros without them reading as "clean".
 
