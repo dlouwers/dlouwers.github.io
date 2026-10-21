@@ -97,6 +97,10 @@ An example, with a limit of four (the real one is larger). Version 4 of the prom
   <figcaption>One pass with a limit of four: articles without a verdict first, then verdicts from any other version, older or newer.</figcaption>
 </figure>
 
+"Recent" means a fixed number of the newest articles, not the whole history. An article older than that keeps the verdict it got, from whichever prompt was in force at the time. Re-judging years of news after every prompt change would cost calls for articles nobody reads any more.
+
+Writing this up, I found that "recent" is not quite what the dashboard shows. The judge looks at the newest articles overall, and the dashboard shows the newest few per holding. A holding that rarely makes the news can have articles on screen that are older than anything the judge still looks at, so they would keep an old verdict for good. The fix is to let the judge look at exactly what the dashboard can show. It is not done yet.
+
 On the test setup, the next deploy re-judged every recent article at startup and on the following hourly poll. The logs for the first 80 showed no errors. Checking whether a new prompt works on real data became a side effect of deploying it.
 
 I left the daily summaries alone. Each one was sent to my phone on its own day, and rewriting it would change the record of what I was told.
