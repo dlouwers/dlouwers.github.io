@@ -150,6 +150,38 @@ It earned its place on the first day. I had just added a rule for holdings whose
 
 This is backtesting, the way you would test a trading rule: run the decision over the history you have, instead of waiting for the future to supply examples. It has the same limit, too. A replay only sees what was stored. Prices between two snapshots are not there, and the model's wording varies between runs, so a replay that lets the model write shows what one run said, not what it will always say. The decisions in code, write or skip and what counts as moved, come out the same every time. The words still belong to the live tests.
 
+# The model is a dependency that can disappear
+
+A week before the evening this part opened with, I rotated the app's API key. The new key belonged to a different cloud project, and in that project the model the app ran on did not exist. Not in the sense of "not found": it still showed up when the key listed its models. Every request to generate text was answered with 404, "no longer available to new users". Gemini keeps an older model available to projects that already used it, and refuses it to new ones.
+
+The worse part was what the app would have done with that key. Building a client for the model makes no call to it, and the app's own checks only complained when the key was missing altogether. A pod with the new key would have started, passed its health checks, and failed every summary, news judgement and alert. It surfaced on the test setup, where the rotation started. Production kept its old key, which turned out to work with newer models too: the restriction only runs one way.
+
+So the app moved to a newer model, and that move needed new code: the newer model rejects the old way of switching off its reasoning, outright, with HTTP 400. That is how code and model came to depend on each other, and that is the dependency the evening in September broke: the new code reached production, and the configuration still named the old model.
+
+Three things about this kind of dependency are worth saying plainly:
+
+- **A model can go away without being deleted.** It can stay listed and stop answering, for you, because of which project you are in. Nothing in the API said so until a real call was made.
+- **Code and model are versioned together.** A setting the code sends can be valid for one model and an error for the next.
+- **The way they reach production can split them.** Here, tagging a release is what releases it: the cluster picks up the new image by itself. The configuration moves in its own commit. Releasing both in one commit fixed that evening, but it is a habit again, and nothing stops the next tag from going out on its own.
+
+What closes the gap is a check before the new version takes traffic. Kubernetes has a probe for exactly that: a startup probe runs when a container starts, and the container counts as ready only once it passes. The app's startup probe asks one question: has every part of the app that calls the model made one real call, with its own real configuration, and got an answer? There are three such parts: the summary, the news judge, and the triage that decides whether an alert is worth a notification. Each has its own response format, reasoning setting and token limit, and on that evening all three broke at once.
+
+<figure class="d2-diagram" role="img" aria-label="Sequence between the rollout, the new pod, its database and the model API. 1: the new pod asks its database whether this build and configuration passed before; the answer is no. 2: the pod makes one call per component to the model API. If it fails: 3, the model returns an error, and 4, the pod reports not ready, so the old pod keeps serving. If it passes: 5, the model answers, and 6, the pod reports ready and the result is remembered.">
+  <img src="/img/diagrams/model-never-writes-a-number-startup-check.svg" alt="" />
+  <figcaption>A new version takes traffic only after every part that calls the model has made one real call. Until then, the old version keeps serving.</figcaption>
+</figure>
+
+The details are what make it safe to run:
+
+- **Once per process.** The calls run in the background at startup and the probe only reports the result. A container that fails its probe is restarted, and each restart makes one attempt, so a crash loop does not become a stream of paid calls.
+- **Only success passes.** The check does not try to tell my mistakes from the provider's outages. My own mistakes can look like outages: a network rule that blocks the provider shows up as timeouts. If the provider is down during a rollout, the rollout waits, and the old version keeps serving.
+- **What passed is remembered.** Once a build and configuration pass, the app stores that, with the model name, the token limit and a fingerprint of the key. A pod starting with a combination that already passed skips the calls. That way the check blocks a change, not every restart: if a node dies during an outage, its replacement still starts. And a new key is a new combination, so rotating the key is checked again.
+- **Readiness stays cheap.** The regular readiness check still only asks whether the web server answers. It runs every few seconds for the life of the pod, so it must not cost a model call.
+
+It was proven by breaking it on purpose. On the test setup I set a model name that passes the app's own configuration checks but does not exist. The new pod never became ready, each restart made exactly one attempt and got a 404, and after three minutes the deployment tool marked the release as failed. The revert brought it back: one passing check, ready, serving.
+
+The evening in September would now look different. The new code would have started, made three calls, got three errors, and stayed out of service. The old version would have kept writing summaries until the configuration caught up.
+
 <!--
 OUTLINE — part 3 (journey: what broke, what replaced it)
 
