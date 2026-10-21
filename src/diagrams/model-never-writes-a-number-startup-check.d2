@@ -1,0 +1,19 @@
+shape: sequence_diagram
+
+rollout: Rollout
+pod: New pod
+db: Database
+model: Model API
+
+pod -> db: "1. passed before? no"
+pod -> model: "2. one call per component"
+
+"if it fails": {
+  model -> pod: "3. error"
+  pod -> rollout: "4. not ready;\nold pod serves"
+}
+
+"if it passes": {
+  model -> pod: "5. ok"
+  pod -> rollout: "6. ready;\nresult remembered"
+}
