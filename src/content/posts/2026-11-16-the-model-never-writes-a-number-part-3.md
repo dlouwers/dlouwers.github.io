@@ -87,7 +87,7 @@ Writing this up, I found that "recent" is not quite what the dashboard shows. Th
 
 On the test setup, the next deploy re-judged every recent article at startup and on the following hourly poll. The logs for the first 80 showed no errors. Checking whether a new prompt works on real data became a side effect of deploying it.
 
-I left the daily summaries alone. Each one was sent to my phone on its own day, and rewriting it would change the record of what I was told.
+Daily summaries are not re-run. A summary is a message: it went to my phone on a given evening, and I read that text. Writing it again under a newer prompt would replace what I was told with something I never received. A verdict is the dashboard's current opinion of an article; a summary is a record of a day.
 
 # Did the new prompt work?
 
