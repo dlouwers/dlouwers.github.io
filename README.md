@@ -38,9 +38,11 @@ coverAlt: Description of the cover.     # optional
 used in the existing posts. (Rendering used to be a remark plugin; it hung CI.)
 
 The build does inline them: `plugins/rehype-inline-diagrams.mjs` replaces each
-`<img src="/img/diagrams/….svg">` with the SVG itself. As an `<img>`, a diagram
-is a separate document and its dark-mode rules, which are scoped to the page's
-`<html>`, never apply; inline, they follow both the OS and the theme toggle.
+`<img src="/img/diagrams/….svg">` with the SVG itself, on the design system's
+content panel. Colours come from the design system: the render script passes
+each SVG through `recolorD2Svg` (`@dlouwers/stormlantern-tokens/d2`), which
+points D2's colour slots at `var(--sl-color-diagram-*)`. Inline, those follow
+both the OS and the theme toggle; as an `<img>` they would not resolve at all.
 
 ## Scheduled publishing
 

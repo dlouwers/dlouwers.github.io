@@ -33,7 +33,7 @@ export default function rehypeInlineDiagrams({ dir = 'public/img/diagrams' } = {
   return (tree) => {
     walk(tree, (node) => {
       if (node.type === 'raw' && node.value.includes('/img/diagrams/')) {
-        node.value = node.value.replace(DIAGRAM_IMG, (_, name) => svgFor(name));
+        node.value = node.value.replace(DIAGRAM_IMG, (_, name) => `<div class="d2-panel">${svgFor(name)}</div>`);
       }
     });
   };

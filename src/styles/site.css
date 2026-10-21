@@ -17,7 +17,8 @@ img, svg, video {
 }
 
 body {
-  background: var(--sl-color-surface);
+  /* Pages sit on paper; raised content (code, diagrams) sits on panel. */
+  background: var(--sl-color-paper);
   color: var(--sl-color-body);
   font-family: var(--sl-font-family-body);
   font-size: var(--sl-font-size-md);
@@ -34,11 +35,12 @@ body {
 }
 
 a {
-  color: var(--sl-color-accent);
-  text-decoration-color: color-mix(in srgb, var(--sl-color-accent) 40%, transparent);
+  /* accent-text, not accent: orange.500 as text on the page measured 2.73. */
+  color: var(--sl-color-accent-text);
+  text-decoration-color: color-mix(in srgb, var(--sl-color-accent-text) 40%, transparent);
   text-underline-offset: 2px;
 }
-a:hover { color: var(--sl-color-accent-hover, var(--sl-color-accent)); }
+a:hover { text-decoration-color: var(--sl-color-accent-text); }
 
 main {
   display: block;
