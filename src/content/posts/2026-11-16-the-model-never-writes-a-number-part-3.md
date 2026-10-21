@@ -3,6 +3,8 @@ title: "The model never writes a number, part 3: running prompts like deployment
 date: 2026-11-16
 summary: "DRAFT — Part three of letting an LLM write about my portfolio: versioned prompts, tests against the real model, re-judging old output, replaying past days, and the evening every model call failed while the app looked healthy."
 tags: [llm, go, kubernetes]
+cover: /img/posts/model-never-writes-a-number/cover-part-3.png
+coverAlt: "Isometric illustration on a dark navy grid, with glowing teal and coral traces between three platforms. On the left, a tree of glowing nodes stands over a conveyor carrying a cardboard parcel with a blank tag, beside an upright scroll with empty slots outlined in orange. In the centre, a robotic arm touches a glowing amber orb under a glass dome with a small spark, and in front of it a striped barrier arm is lowered, with a coral lamp lit. On the right, a film reel unwinds a strip of scroll-shaped frames down past a dark screen, next to a panel of teal and coral bars."
 draft: false
 ---
 
