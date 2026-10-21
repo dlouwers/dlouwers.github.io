@@ -52,6 +52,28 @@ That rule is also why nothing enforces the bump. A test that fingerprints the pr
 
 The version then pays off in two places later in this part: re-judging old output when a prompt changes, and seeing how each version is doing once it is live.
 
+# Tests against the real model
+
+Most of what parts one and two describe is code, and code gets ordinary unit tests: a sale is not a price move, a missing value is not zero, a reply with a stray number is retried. Those tests use a fake model that replies with whatever the test tells it to. They prove the app handles every kind of reply correctly. They cannot prove the real model will give the replies the app needs: that it writes names instead of digits without being reminded, or that a headline full of percentages does not tempt it into quoting them.
+
+Only a real call answers that. So next to the unit tests sits a small set of live tests. Each one takes a fixed case, such as two real days of portfolio data frozen in the test or a handful of news articles chosen to be hard, sends it to the real model, and checks the reply. A model does not give the same answer twice, so each case runs several times, and one bad reply fails the test.
+
+They need an API key, which keeps them out of the CI pipeline. I run them by hand whenever a prompt or the model changes, and the commit that makes the change says what they showed. Without a key they skip, with a message that says what is now unproven (lightly edited):
+
+```text
+SKIPPED — needs an API key. This is the only test that shows the real
+model keeps the placeholder contract; a green run without it proves
+nothing about that.
+```
+
+The wording matters. A skipped test shows up as green in most test runners, and green reads as "fine".
+
+They also have to fail, not warn. Part two told how a missing figure got through because the live test logged it instead of failing on it. A log line in a test run is read by nobody.
+
+The live tests found three of the problems in part two: the copied phrase in the news reasons, the share left out of one explanation in five, and the literal written with a sign. And when the app moved to a newer model, the move went out after the news tests had passed against it and a summary from it had been read by hand.
+
+That last one is worth a second look. The tests proved that the new code worked with the new model. They said nothing about which model production was configured to use, and that is what broke on the September evening above. A test of the model is not a test of the deployment.
+
 <!--
 OUTLINE — part 3 (journey: what broke, what replaced it)
 
