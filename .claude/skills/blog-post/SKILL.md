@@ -138,7 +138,7 @@ D2, pre-rendered to SVG (README). What worked and what did not:
   and it did on this repository:
 
   ```sh
-  gh api repos/dlouwers/dlouwers.github.io/actions/workflows \
+  gh api repos/stormlantern-dev/blog/actions/workflows \
     --jq '.workflows[] | "\(.name) \(.state)"'
   ```
 
