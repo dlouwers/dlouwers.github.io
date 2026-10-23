@@ -11,7 +11,7 @@
 // these by absolute URL. In dev that fetch isn't reachable from the
 // iframe (mixed-origin / localhost), so we fall back to giscus's
 // built-in `light` and `dark_dimmed` themes.
-// IDs come from giscus.app for dlouwers/dlouwers.github.io.
+// IDs come from giscus.app for stormlantern-dev/blog.
 
 const REPO_ID = 'MDEwOlJlcG9zaXRvcnkyODg1NDY0Ng==';
 const CATEGORY_ID = 'DIC_kwDOAbhJds4C8s4S';
@@ -26,7 +26,7 @@ const CUSTOM_THEME_BASE = import.meta.env.PROD && SITE_ORIGIN
     <div id="giscus-container" data-theme-base={CUSTOM_THEME_BASE ?? ''}></div>
     <script is:inline
       src="https://giscus.app/client.js"
-      data-repo="dlouwers/dlouwers.github.io"
+      data-repo="stormlantern-dev/blog"
       data-repo-id={REPO_ID}
       data-category="Comments"
       data-category-id={CATEGORY_ID}
