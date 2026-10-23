@@ -9,7 +9,7 @@
         "@astrojs/rss": "^4.0.18",
         "@astrojs/sitemap": "^3.7.2",
         "@dlouwers/stormlantern-components": "0.5.1",
-        "@dlouwers/stormlantern-tokens": "0.3.1",
+        "@dlouwers/stormlantern-tokens": "0.4.0",
         "astro": "^6.3.1",
         "astro-expressive-code": "^0.42.0",
       },
@@ -53,7 +53,7 @@
 
     "@dlouwers/stormlantern-components": ["@dlouwers/stormlantern-components@0.5.1", "https://europe-west4-npm.pkg.dev/homelab-495021/npm-stormlantern/@dlouwers/stormlantern-components/-/@dlouwers/stormlantern-components-0.5.1.tgz", { "peerDependencies": { "@dlouwers/stormlantern-tokens": "*" } }, "sha512-I99S8/zfDDa6zIwLF9G7AaRmgd2Q3YrxrB9xh4C1eQC/42IX8fTq0X0GKL5kDo/axd+Vo2kr/pXSXUlF2po3IA=="],
 
-    "@dlouwers/stormlantern-tokens": ["@dlouwers/stormlantern-tokens@0.3.1", "https://europe-west4-npm.pkg.dev/homelab-495021/npm-stormlantern/@dlouwers/stormlantern-tokens/-/@dlouwers/stormlantern-tokens-0.3.1.tgz", {}, "sha512-krsKJOyFSdQZua5lHVgCJVPEecXUrQLgfN3UvHAtGmWSTCbShWbRYOQxNvZvVYA62H2hGJ9DZB82gYC3S1bWbw=="],
+    "@dlouwers/stormlantern-tokens": ["@dlouwers/stormlantern-tokens@0.4.0", "https://europe-west4-npm.pkg.dev/homelab-495021/npm-stormlantern/@dlouwers/stormlantern-tokens/-/@dlouwers/stormlantern-tokens-0.4.0.tgz", {}, "sha512-JRc3I92gytcakDnXn711d14Hqfhefb/CF2ZXwxZUqnlD2o1wWDWb7HtWE8Vu1y6Xr27vQkSS++G90uFetCh1YA=="],
 
     "@emnapi/runtime": ["@emnapi/runtime@1.10.0", "", { "dependencies": { "tslib": "^2.4.0" } }, "sha512-ewvYlk86xUoGI0zQRNq/mC+16R1QeDlKQy21Ki3oSYXNgLb45GV1P6A0M+/s6nyCuNDqe5VpaY84BzXGwVbwFA=="],
 
